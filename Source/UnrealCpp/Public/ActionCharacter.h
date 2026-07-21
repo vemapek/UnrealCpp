@@ -32,7 +32,6 @@ protected:
 
 protected:
 	void OnTestAction(const FInputActionValue& Value);
-
 	void OnMoveAction(const FInputActionValue& Value);
 	void OnBoostOn(const FInputActionValue& Value);
 	void OnBoostOff(const FInputActionValue& Value);
