@@ -29,6 +29,7 @@ AActionCharacter::AActionCharacter()
 void AActionCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	AnimInstance = GetMesh()->GetAnimInstance();
 	
 }
 
@@ -54,9 +55,20 @@ void AActionCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 void AActionCharacter::OnTestAction(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Log, TEXT("TestAction 실행"));
-	//Value.Get<bool>();
-	//Value.Get<FVector2D>();
+	if (!RollMontage.IsValid()) return;
+
+	if (AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		if (!AnimInstance->IsAnyMontagePlaying())
+		{
+			if (!GetLastMovementInputVector().IsNearlyZero()) // 이동 입력중이면
+			{
+				SetActorRotation(GetLastMovementInputVector().Rotation()); // 입력방향으로 즉시 회전해서 구르기
+			}
+
+			PlayAnimMontage(RollMontage.Get());
+		}
+	}
 }
 
 void AActionCharacter::OnMoveAction(const FInputActionValue& Value)

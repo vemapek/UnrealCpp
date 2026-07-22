@@ -58,5 +58,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float MoveSpeed = 600;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TWeakObjectPtr<UAnimMontage> RollMontage;
 
+	UPROPERTY()
+	TObjectPtr<UAnimInstance> AnimInstance = nullptr;
 };
