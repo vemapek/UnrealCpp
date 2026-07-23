@@ -1,64 +1,51 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "ActionCharacter.h"
 #include "EnhancedInputComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
+#include "StatActorComponent.h"
 
 // Sets default values
 AActionCharacter::AActionCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	CameraSpringArmComponent = CreateDefaultSubobject<USpringArmComponent> ( TEXT("CameraSpringArm"));
+	CameraSpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraSpringArm"));
 	CameraSpringArmComponent->SetupAttachment(RootComponent);
+	CameraSpringArmComponent->bUsePawnControlRotation = true; // 스프링암은 컨트롤러 입력에 맞게 회전되기
+
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("PlayerCamera"));
 	CameraComponent->SetupAttachment(CameraSpringArmComponent);
 
-	bUseControllerRotationYaw = false; // 컨트롤러 움직일 때 같이 회전되는 것 방지
-	GetCharacterMovement()->bOrientRotationToMovement = true; //캐릭터 이동방향으로 바라보게 만들기
-	CameraSpringArmComponent->bUsePawnControlRotation = true; //스프링암은 컨트롤러 입력에 맞게 회전되기
+	StatComponent = CreateDefaultSubobject<UStatActorComponent>(TEXT("Stat"));
 
-	this->GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
-
+	bUseControllerRotationYaw = false; // 컨트롤러 움직일 때 폰이 같이 회전되는 것 방지
+	GetCharacterMovement()->bOrientRotationToMovement = true; // 캐릭터 이동방향으로 바라보게 만들기
 }
-
-float AActionCharacter::GetCurrentStamina_Implementation() const
-{
-	return CurrentStamina;
-}
-
-bool AActionCharacter::ConsumeStamina_Implementation(float InAmount)
-{
-	bool bResult = false;
-	if (CurrentStamina >= InAmount)
-	{
-		CurrentStamina -= InAmount;
-		bResult = true;
-	}
-	UE_LOG(LogTemp, Log, TEXT("현재 Stamina : %.1f"), CurrentStamina);
-	return bResult;
-}
-
-void AActionCharacter::RecoveryStamina_Implementation(float InAmount)
-{
-	CurrentStamina = FMath::Clamp(CurrentStamina + InAmount, 0.0f, MaxStamina);
-	UE_LOG(LogTemp, Log, TEXT("현재 Stamina : %.1f"), CurrentStamina);
-}
-
 
 // Called when the game starts or when spawned
 void AActionCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	AnimInstance = GetMesh()->GetAnimInstance();
-	CurrentStamina = MaxStamina;
-	//GetCurrentStamina(); // 실행했을 때 C++에 구현된 내용만 호출한다.
-	//IInterfaceStamina::Execute_GetCurrentStamina(this); // 실행했을 때 블루프린트 구현으로 호출한다
-	
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
+	}
+	if (GetMesh())
+	{
+		AnimInstance = GetMesh()->GetAnimInstance();
+	}
+	if (StatComponent)
+	{
+		FAutoRecoveryData Data = FAutoRecoveryData(
+			StaminaAutoRecoveryCoolTime,
+			StaminaAutoRecoveryInterval,
+			StaminaAutoRecoveryPerTick);
+		StatComponent->InitializeStat(Data);
+	}
 }
 
 // Called every frame
@@ -66,18 +53,24 @@ void AActionCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (RecoveryTime > 0)
-	{
-		RecoveryTime -= DeltaTime;
-	}
-	else
-	{
-		RecoveryTime = 0.0f;
-		IInterfaceStamina::Execute_RecoveryStamina(this,2.0f);
-	}
-
+	SpendBoostStamina(DeltaTime);
 }
 
+void AActionCharacter::SpendBoostStamina(float DeltaTime)
+{
+	// 부스트 모드이고, 이동하고 있고, 몽타주 재생 중이 아니면
+	if (bBoostMode && !GetVelocity().IsNearlyZero() &&
+		(AnimInstance && !AnimInstance->IsAnyMontagePlaying()))
+	{
+		// 스태미나 지속적으로 감소
+		if (!IInterfaceStamina::Execute_ConsumeStamina(StatComponent, BoostStaminaCostPerSec * DeltaTime))
+		{
+			OnBoostOff(FInputActionValue()); // 스태미나가 다 떨어지면 부스트 모드 정지
+		}
+	}
+}
+
+// Called to bind functionality to input
 void AActionCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -86,71 +79,66 @@ void AActionCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	{
 		EnhancedInputComponent->BindAction(IA_Test, ETriggerEvent::Started, this, &AActionCharacter::OnTestAction);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AActionCharacter::OnMoveAction);
-		EnhancedInputComponent->BindAction(IA_Boost, ETriggerEvent::Triggered, this, &AActionCharacter::OnBoostOn);
-		EnhancedInputComponent->BindAction(IA_Boost, ETriggerEvent::Completed, this, &AActionCharacter::OnBoostOff);
+		EnhancedInputComponent->BindActionValueLambda(IA_Boost, ETriggerEvent::Started,
+			[this](const FInputActionValue& _) {
+				OnBoostOn(_);
+			});
+		EnhancedInputComponent->BindActionValueLambda(IA_Boost, ETriggerEvent::Completed,
+			[this](const FInputActionValue& _) {
+				OnBoostOff(_);
+			});
 	}
 }
 
 void AActionCharacter::OnTestAction(const FInputActionValue& Value)
 {
-	if (!RollMontage.IsValid()) return;
+	if (!RollMontage) return;
 
-	if (AnimInstance = GetMesh()->GetAnimInstance())
+	if (!AnimInstance)
 	{
-		if (!AnimInstance->IsAnyMontagePlaying())
+		AnimInstance = GetMesh()->GetAnimInstance();
+	}
+
+	// 몽타주 재생 중이 아닐 때만 구르기 시도
+	if (AnimInstance && !AnimInstance->IsAnyMontagePlaying())
+	{
+		if (IInterfaceStamina::Execute_ConsumeStamina(StatComponent, RollStaminaCost)) // 스태미나 소비 시도 후 소비되면 구르기 실행
 		{
-			if (!GetLastMovementInputVector().IsNearlyZero()) // 이동 입력중이면
+			if (!GetLastMovementInputVector().IsNearlyZero()) // 이동 입력 중이면
 			{
 				SetActorRotation(GetLastMovementInputVector().Rotation()); // 입력방향으로 즉시 회전해서 구르기
 			}
 
-			if (IInterfaceStamina::Execute_ConsumeStamina(this, 20))
-			{
-				PlayAnimMontage(RollMontage.Get());
-				RecoveryTime = 3.0f;
-				
-			}
-
-			
+			PlayAnimMontage(RollMontage);
 		}
 	}
-
 }
 
 void AActionCharacter::OnMoveAction(const FInputActionValue& Value)
 {
-	const FVector2D MoveInput = Value.Get<FVector2D>();
+	FVector2D Input = Value.Get<FVector2D>();
+	FVector WorldDirection = FVector(Input.Y, Input.X, 0).GetSafeNormal();
 
-	// 컨트롤러(카메라)가 보는 방향 기준으로 앞/오른쪽 벡터 구하기
-	const FRotator ControlRotation = GetControlRotation();
-	const FRotator YawRotation(0, ControlRotation.Yaw, 0);
+	// 카메라의 Yaw 회전각(Degree)을 Radian으로 변경
+	float YawRadian = FMath::DegreesToRadians(GetControlRotation().Yaw);
 
-	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+	// 좌우 회전만 할거라 UpVector를 기준축으로 Yaw회전각 만큼 돌리는 회전 만들기
+	FQuat ControlYawRotation(FVector::UpVector, YawRadian);
 
-	AddMovementInput(ForwardDirection, MoveInput.Y);
-	AddMovementInput(RightDirection, MoveInput.X);
+	// 입력된 방향에 회전 적용(=카메라 Yaw회전 만큼 입력방향을 회전시키기)
+	WorldDirection = ControlYawRotation.RotateVector(WorldDirection);
+
+	AddMovementInput(WorldDirection);
 }
 
 void AActionCharacter::OnBoostOn(const FInputActionValue& Value)
 {
-	if (ConsumeStamina_Implementation(5))
-	{
-		this->GetCharacterMovement()->MaxWalkSpeed = MoveSpeed * 3;
-		RecoveryTime = 3.0f;
-	}
-	else
-	{
-		this->GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
-		
-	}
+	GetCharacterMovement()->MaxWalkSpeed = BoostSpeed;
+	bBoostMode = true;
 }
 
 void AActionCharacter::OnBoostOff(const FInputActionValue& Value)
 {
-	this->GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
-	
+	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
+	bBoostMode = false;
 }
-
-
-
