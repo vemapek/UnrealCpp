@@ -14,7 +14,7 @@ class UInterfaceStamina : public UInterface
 };
 
 /**
- * 
+ *
  */
 class UNREALCPP_API IInterfaceStamina
 {
@@ -24,6 +24,9 @@ class UNREALCPP_API IInterfaceStamina
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Stamina")
 	float GetCurrentStamina() const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Stamina")
+	float GetMaxStamina() const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Stamina")
 	bool ConsumeStamina(float InAmount);

@@ -26,6 +26,11 @@ AActionCharacter::AActionCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = true; // 캐릭터 이동방향으로 바라보게 만들기
 }
 
+UStatActorComponent* AActionCharacter::GetStatComponent() const
+{
+	return StatComponent;
+}
+
 // Called when the game starts or when spawned
 void AActionCharacter::BeginPlay()
 {
@@ -52,6 +57,9 @@ void AActionCharacter::BeginPlay()
 void AActionCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// 테스트 전용 코드
+	UE_LOG(LogTemp, Log, TEXT("테스트 스태미나 : %.1f / %.1f"), IInterfaceStamina::Execute_GetCurrentStamina(StatComponent), IInterfaceStamina::Execute_GetMaxStamina(StatComponent));
 
 	SpendBoostStamina(DeltaTime);
 }
@@ -99,7 +107,7 @@ void AActionCharacter::OnTestAction(const FInputActionValue& Value)
 		AnimInstance = GetMesh()->GetAnimInstance();
 	}
 
-	// 몽타주 재생 중이 아닐 때만 구르기 시도
+	// 몽타주 재생 중이 아닐 때만 구르기 시도 (재생 중엔 스태미나 소모 자체를 안 함)
 	if (AnimInstance && !AnimInstance->IsAnyMontagePlaying())
 	{
 		if (IInterfaceStamina::Execute_ConsumeStamina(StatComponent, RollStaminaCost)) // 스태미나 소비 시도 후 소비되면 구르기 실행

@@ -19,6 +19,11 @@ float UStatActorComponent::GetCurrentStamina_Implementation() const
 	return CurrentStamina;
 }
 
+float UStatActorComponent::GetMaxStamina_Implementation() const
+{
+	return MaxStamina;
+}
+
 bool UStatActorComponent::ConsumeStamina_Implementation(float InAmount)
 {
 	bool bResult = false;
@@ -36,10 +41,17 @@ bool UStatActorComponent::ConsumeStamina_Implementation(float InAmount)
 			StaminaRecoveryData.CoolTime
 		);
 
+
+		OnStaminaChange.Broadcast(CurrentStamina, MaxStamina); // 블루프린트 디스패처 call과 같다
+
+		if (FMath::IsNearlyZero(CurrentStamina))
+		{
+			OnStaminaEmpty.Broadcast();
+		}
 		bResult = true;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Stamina : %.1f / %.1f"), CurrentStamina, MaxStamina);
+	//UE_LOG(LogTemp, Log, TEXT("Stamina : %.1f / %.1f"), CurrentStamina, MaxStamina);
 	return bResult;
 }
 
@@ -58,6 +70,44 @@ void UStatActorComponent::RecoveryStamina_Implementation(float InAmount)
 		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
 		TimerManager.ClearTimer(StaminaAutoRecoveryTimerHandle);
 	}
+}
+
+float UStatActorComponent::GetCurrentHealth_Implementation() const
+{
+	return CurrentHealth;
+}
+
+float UStatActorComponent::GetMaxHealth_Implementation() const
+{
+	return MaxHealth;
+}
+
+void UStatActorComponent::DamageHealth_Implementation(float InAmount)
+{
+	CurrentHealth -= InAmount;
+	
+	if (CurrentHealth < 0.0f)
+	{
+		CurrentHealth = 0;
+		OnHealthChange.Broadcast(CurrentHealth, MaxHealth);
+		OnDie.Broadcast();
+	}
+	else
+	{
+		OnHealthChange.Broadcast(CurrentHealth, MaxHealth);
+
+	}
+
+
+	//UE_LOG(LogTemp, Log, TEXT("Health : %.1f / %.1f"), CurrentHealth, MaxHealth);
+	
+}
+
+void UStatActorComponent::HealHealth_Implementation(float InAmount)
+{
+	CurrentHealth = FMath::Clamp(CurrentHealth + InAmount, 0.0f, MaxHealth);
+	OnHealthChange.Broadcast(CurrentHealth, MaxHealth);
+	//UE_LOG(LogTemp, Log, TEXT("Health : %.1f / %.1f"), CurrentHealth, MaxHealth);
 }
 
 // Called when the game starts
