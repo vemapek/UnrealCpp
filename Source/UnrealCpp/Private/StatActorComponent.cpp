@@ -70,6 +70,12 @@ void UStatActorComponent::RecoveryStamina_Implementation(float InAmount)
 		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
 		TimerManager.ClearTimer(StaminaAutoRecoveryTimerHandle);
 	}
+	OnStaminaChange.Broadcast(CurrentStamina, MaxStamina); // 블루프린트 디스패처 call과 같다
+
+	if (FMath::IsNearlyZero(CurrentStamina))
+	{
+		OnStaminaEmpty.Broadcast();
+	}
 }
 
 float UStatActorComponent::GetCurrentHealth_Implementation() const
@@ -108,6 +114,13 @@ void UStatActorComponent::HealHealth_Implementation(float InAmount)
 	CurrentHealth = FMath::Clamp(CurrentHealth + InAmount, 0.0f, MaxHealth);
 	OnHealthChange.Broadcast(CurrentHealth, MaxHealth);
 	//UE_LOG(LogTemp, Log, TEXT("Health : %.1f / %.1f"), CurrentHealth, MaxHealth);
+
+	OnHealthChange.Broadcast(CurrentHealth, MaxHealth); // 블루프린트 디스패처 call과 같다
+
+	if (FMath::IsNearlyZero(CurrentHealth))
+	{
+		OnDie.Broadcast();
+	}
 }
 
 // Called when the game starts
