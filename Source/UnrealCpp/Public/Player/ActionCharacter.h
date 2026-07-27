@@ -13,6 +13,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UStatActorComponent;
 class UAnimNotifyState_SectionJump;
+class USkeletalMeshComponent;
 
 UCLASS()
 class UNREALCPP_API AActionCharacter : public ACharacter, public IInterfaceStat
@@ -108,6 +109,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UStatActorComponent> StatComponent = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<USkeletalMeshComponent> RightHandMesh = nullptr;
 
 private:
 	UPROPERTY()
