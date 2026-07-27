@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "TestTimer.h"
+#include "Test/TestTimer.h"
 
 // Sets default values
 ATestTimer::ATestTimer()

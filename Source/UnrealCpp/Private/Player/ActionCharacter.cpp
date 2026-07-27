@@ -1,11 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "ActionCharacter.h"
+#include "Player/ActionCharacter.h"
 #include "EnhancedInputComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
-#include "StatActorComponent.h"
+#include "Component/StatActorComponent.h"
+#include "AnimNotify/AnimNotifyState_SectionJump.h"
 
 // Sets default values
 AActionCharacter::AActionCharacter()
@@ -29,6 +30,12 @@ AActionCharacter::AActionCharacter()
 UStatActorComponent* AActionCharacter::GetStatComponent() const
 {
 	return StatComponent;
+}
+
+void AActionCharacter::SetSectionJumpNotify(UAnimNotifyState_SectionJump* InSectionJumpNotify)
+{
+	SectionJumpNotify = InSectionJumpNotify;
+	bComboReady = SectionJumpNotify.IsValid();
 }
 
 // Called when the game starts or when spawned
@@ -78,6 +85,21 @@ void AActionCharacter::SpendBoostStamina(float DeltaTime)
 	}
 }
 
+void AActionCharacter::SectionJumpForCombo()
+{
+	if (SectionJumpNotify.IsValid()&&bComboReady)
+	{
+		UAnimMontage* Current = AnimInstance->GetCurrentActiveMontage();
+		AnimInstance->Montage_SetNextSection( // 섹션을 변경한다
+			AnimInstance->Montage_GetCurrentSection(Current), // 이 섹션에서 from
+			SectionJumpNotify->GetNextSectionName(),	// 이 섹션으로 변셩 to
+			Current // 적용할 몽타주
+		);
+		IInterfaceStamina::Execute_ConsumeStamina(GetStatComponent(), AttackStamina);
+		bComboReady = false;
+	}
+}
+
 // Called to bind functionality to input
 void AActionCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -87,6 +109,7 @@ void AActionCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	{
 		EnhancedInputComponent->BindAction(IA_Test, ETriggerEvent::Started, this, &AActionCharacter::OnTestAction);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AActionCharacter::OnMoveAction);
+		EnhancedInputComponent->BindAction(IA_Attack, ETriggerEvent::Started, this, &AActionCharacter::OnAttackAction);
 		EnhancedInputComponent->BindActionValueLambda(IA_Boost, ETriggerEvent::Started,
 			[this](const FInputActionValue& _) {
 				OnBoostOn(_);
@@ -149,4 +172,21 @@ void AActionCharacter::OnBoostOff(const FInputActionValue& Value)
 {
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
 	bBoostMode = false;
+}
+
+void AActionCharacter::OnAttackAction(const FInputActionValue& Value)
+{
+	if (AnimInstance&&IInterfaceStamina::Execute_GetCurrentStamina(GetStatComponent())>AttackStamina)
+	{
+		if (!AnimInstance->IsAnyMontagePlaying())
+		{
+			//첫번째 콤보 공격
+			PlayAnimMontage(AttackMontage);
+			IInterfaceStamina::Execute_ConsumeStamina(GetStatComponent(), AttackStamina);
+		}
+		else if (AnimInstance->GetCurrentActiveMontage() == AttackMontage)
+		{
+			SectionJumpForCombo();
+		}
+	}
 }

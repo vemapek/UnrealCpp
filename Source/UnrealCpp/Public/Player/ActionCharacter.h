@@ -5,13 +5,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
-#include "InterfaceStat.h"
+#include "Interface/InterfaceStat.h"
 #include "ActionCharacter.generated.h"
 
 class UInputAction;
 class USpringArmComponent;
 class UCameraComponent;
 class UStatActorComponent;
+class UAnimNotifyState_SectionJump;
 
 UCLASS()
 class UNREALCPP_API AActionCharacter : public ACharacter, public IInterfaceStat
@@ -24,6 +25,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Stat")
 	virtual UStatActorComponent* GetStatComponent() const override;
+
+	void SetSectionJumpNotify(UAnimNotifyState_SectionJump* InSectionJumpNotify);
+
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -40,6 +45,7 @@ protected:
 	void OnMoveAction(const FInputActionValue& Value);
 	void OnBoostOn(const FInputActionValue& Value);
 	void OnBoostOff(const FInputActionValue& Value);
+	void OnAttackAction(const FInputActionValue& Value);
 
 private:
 	void SpendBoostStamina(float DeltaTime);
@@ -50,6 +56,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UInputAction> IA_Move;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UInputAction> IA_Attack;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UInputAction> IA_Boost;
@@ -83,6 +92,13 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat|Stamina")
 	float StaminaAutoRecoveryInterval = 0.1f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat|Stamina")
+	float AttackStamina = 5.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TObjectPtr<UAnimMontage> AttackMontage;
+
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USpringArmComponent> CameraSpringArmComponent = nullptr;
@@ -98,4 +114,10 @@ private:
 	TObjectPtr<UAnimInstance> AnimInstance = nullptr;
 
 	bool bBoostMode = false;
+
+	TWeakObjectPtr<UAnimNotifyState_SectionJump> SectionJumpNotify = nullptr;
+	bool bComboReady = false;
+
+	void SectionJumpForCombo(); //콤보용으로 섹션 점프하는 함수
+
 };

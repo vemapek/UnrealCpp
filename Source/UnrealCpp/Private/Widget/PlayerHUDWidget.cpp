@@ -1,11 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "PlayerHUDWidget.h"
-#include "StatBarWidget.h"
-#include "StatActorComponent.h"
-#include "InterfaceStat.h"
-#include "InterfaceStamina.h"
-#include "InterfaceHealth.h"
+#include "Widget/PlayerHUDWidget.h"
+#include "Widget/StatBarWidget.h"
+#include "Component/StatActorComponent.h"
+#include "Interface/InterfaceStat.h"
+#include "Interface/InterfaceStamina.h"
+#include "Interface/InterfaceHealth.h"
 
 void UPlayerHUDWidget::NativeConstruct()
 {
