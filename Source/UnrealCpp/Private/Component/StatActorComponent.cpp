@@ -86,6 +86,12 @@ void UStatActorComponent::DamageHealth_Implementation(float InAmount)
 {
 	CurrentHealth -= InAmount;
 
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red,
+			FString::Printf(TEXT("%s Health: %.1f / %.1f"), *GetOwner()->GetName(), CurrentHealth, MaxHealth));
+	}
+
 	if (CurrentHealth < 0.0f)
 	{
 		CurrentHealth = 0;

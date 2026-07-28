@@ -43,6 +43,19 @@ void AActionCharacter::SetSectionJumpNotify(UAnimNotifyState_SectionJump* InSect
 	bComboReady = SectionJumpNotify.IsValid();
 }
 
+float AActionCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	UE_LOG(LogTemp, Warning, TEXT("TakeDamage 호출됨: DamageAmount=%.1f"), DamageAmount);
+	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	if (StatComponent && ActualDamage > 0.0f)
+	{
+		IInterfaceHealth::Execute_DamageHealth(StatComponent, ActualDamage);
+	}
+
+	return ActualDamage;
+}
+
 // Called when the game starts or when spawned
 void AActionCharacter::BeginPlay()
 {

@@ -46,6 +46,9 @@ protected:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	// 언리얼 표준 데미지 시스템(ApplyDamage)이 호출하는 함수 - 받은 데미지를 StatComponent로 연결
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
 protected:
 	void OnTestAction(const FInputActionValue& Value);
 	void OnMoveAction(const FInputActionValue& Value);

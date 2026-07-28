@@ -47,6 +47,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FName AttachSocketName = TEXT("hand_rSocket");
 
+	// 이 무기가 입히는 데미지량
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float Damage = 10.0f;
+
 private:
 	// 무기를 장비하고 있는 대상
 	TWeakObjectPtr<ACharacter> OwnerCharacter = nullptr;

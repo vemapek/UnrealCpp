@@ -5,6 +5,7 @@
 #include "Components/CapsuleComponent.h"
 #include "InterfaceWeaponUser.h"
 #include "UnrealCpp/UnrealCpp.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AWeaponActor::AWeaponActor()
@@ -62,7 +63,19 @@ void AWeaponActor::OnEquipped(AActor* InOwner)
 
 void AWeaponActor::OnHitAreaBeginOverlap(UPrimitiveComponent* InOverlappedComponent, AActor* InOtherActor, UPrimitiveComponent* InOtherComp, int32 InOtherBodyIndex, bool bFromSweep, const FHitResult& InSweepResult)
 {
-	UE_LOG(LogTemp, Log, TEXT("오버랩 된 대상 : %s"), *InOtherActor->GetName());
+	if (!InOtherActor) return;
+
+	UE_LOG(LogTemp, Warning, TEXT("ApplyDamage 호출: 대상=%s, 데미지=%.1f"), *InOtherActor->GetName(), Damage);
+
+	AController* InstigatorController = OwnerCharacter.IsValid() ? OwnerCharacter->GetController() : nullptr;
+
+	UGameplayStatics::ApplyDamage(
+		InOtherActor,          // 맞은 대상
+		Damage,                // 데미지량
+		InstigatorController,  // 누가 때렸는지 (무기 주인의 컨트롤러)
+		this,                  // 데미지를 유발한 물체 (이 무기)
+		nullptr                // 데미지 타입 (기본값)
+	);
 }
 
 void AWeaponActor::AttackEnable(bool bEnable)
