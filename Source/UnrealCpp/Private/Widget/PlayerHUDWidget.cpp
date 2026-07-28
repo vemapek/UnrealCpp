@@ -2,68 +2,34 @@
 
 #include "Widget/PlayerHUDWidget.h"
 #include "Widget/StatBarWidget.h"
-#include "Component/StatActorComponent.h"
 #include "Interface/InterfaceStat.h"
-#include "Interface/InterfaceStamina.h"
 #include "Interface/InterfaceHealth.h"
+#include "Interface/InterfaceStamina.h"
+#include "Component/StatActorComponent.h"
 
 void UPlayerHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+	InitializePlayerStatBars();
+}
 
-	// 이 HUD를 소유한 플레이어의 폰(캐릭터)을 가져와서
-	if (APawn* OwningPawn = GetOwningPlayerPawn())
+void UPlayerHUDWidget::InitializePlayerStatBars()
+{
+	if (IInterfaceStat* Player = Cast<IInterfaceStat>(GetOwningPlayerPawn()))
 	{
-		// 그 폰이 IInterfaceStat을 구현했는지 확인하고, 구현했으면 StatComponent를 받아옴
-		if (IInterfaceStat* Stat = Cast<IInterfaceStat>(OwningPawn))
+		if (UStatActorComponent* Stat = Player->GetStatComponent())
 		{
-			if (UStatActorComponent* StatComp = Stat->GetStatComponent())
-			{
-				CachedStatComponent = StatComp;
+			// 각 바(HealthBar, StaminaBar)를 컴포넌트 델리게이트에 직접 등록
+			Stat->OnHealthChange.AddDynamic(HealthBar, &UStatBarWidget::UpdateStat);
+			Stat->OnStaminaChange.AddDynamic(StaminaBar, &UStatBarWidget::UpdateStat);
 
-				// 값이 바뀔 때만 알림받도록 델리게이트에 함수 등록
-				StatComp->OnStaminaChange.AddDynamic(this, &UPlayerHUDWidget::HandleStaminaChange);
-				StatComp->OnHealthChange.AddDynamic(this, &UPlayerHUDWidget::HandleHealthChange);
-
-				// 델리게이트는 "변화가 생겼을 때"만 호출되니까,
-				// 위젯이 처음 뜬 시점의 현재값으로 한 번은 직접 갱신해줘야 함
-				const float CurrentStamina = IInterfaceStamina::Execute_GetCurrentStamina(StatComp);
-				const float MaxStamina = IInterfaceStamina::Execute_GetMaxStamina(StatComp);
-				HandleStaminaChange(CurrentStamina, MaxStamina);
-
-				const float CurrentHealth = IInterfaceHealth::Execute_GetCurrentHealth(StatComp);
-				const float MaxHealth = IInterfaceHealth::Execute_GetMaxHealth(StatComp);
-				HandleHealthChange(CurrentHealth, MaxHealth);
-			}
+			// 델리게이트는 "변화가 생겼을 때"만 호출되니까, 처음 뜬 시점 값으로 한 번은 직접 갱신
+			HealthBar->UpdateStat(
+				IInterfaceHealth::Execute_GetCurrentHealth(Stat),
+				IInterfaceHealth::Execute_GetMaxHealth(Stat));
+			StaminaBar->UpdateStat(
+				IInterfaceStamina::Execute_GetCurrentStamina(Stat),
+				IInterfaceStamina::Execute_GetMaxStamina(Stat));
 		}
 	}
 }
-
-void UPlayerHUDWidget::NativeDestruct()
-{
-	// 위젯이 사라질 때 등록해둔 델리게이트를 반드시 해제 (안 하면 위젯이 사라져도 계속 호출 시도해서 위험함)
-	if (CachedStatComponent.IsValid())
-	{
-		CachedStatComponent->OnStaminaChange.RemoveDynamic(this, &UPlayerHUDWidget::HandleStaminaChange);
-		CachedStatComponent->OnHealthChange.RemoveDynamic(this, &UPlayerHUDWidget::HandleHealthChange);
-	}
-
-	Super::NativeDestruct();
-}
-
-void UPlayerHUDWidget::HandleStaminaChange(float Current, float Max)
-{
-	if (StaminaBar)
-	{
-		StaminaBar->UpdateStat(Current, Max);
-	}
-}
-
-void UPlayerHUDWidget::HandleHealthChange(float Current, float Max)
-{
-	if (HealthBar)
-	{
-		HealthBar->UpdateStat(Current, Max);
-	}
-}
-

@@ -11,8 +11,6 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnStatEmpty);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStatChange, float, Current, float, Max);
 
-
-
 struct FAutoRecoveryData
 {
 	float CoolTime = 3.0f;			// 자동 회복이 시작되기까지 걸릴 시간
@@ -42,8 +40,6 @@ public:
 	FOnStatChange OnStaminaChange;
 	UPROPERTY(BlueprintAssignable, Category = "Stat|Health")
 	FOnStatChange OnHealthChange;
-
-
 
 public:
 	// Sets default values for this component's properties
@@ -90,4 +86,7 @@ private:
 
 	// 스태미나 자동 회복용 데이터
 	FAutoRecoveryData StaminaRecoveryData;
+
+	// "거의 0"으로 취급할 오차 허용 범위
+	const float EmptyCheckLimit = 0.01f;
 };

@@ -41,17 +41,17 @@ bool UStatActorComponent::ConsumeStamina_Implementation(float InAmount)
 			StaminaRecoveryData.CoolTime
 		);
 
-
 		OnStaminaChange.Broadcast(CurrentStamina, MaxStamina); // 블루프린트 디스패처 call과 같다
 
-		if (FMath::IsNearlyZero(CurrentStamina))
+		if (CurrentStamina < EmptyCheckLimit)
 		{
 			OnStaminaEmpty.Broadcast();
 		}
+
 		bResult = true;
+		UE_LOG(LogTemp, Log, TEXT("Stamina : %.1f / %.1f"), CurrentStamina, MaxStamina);
 	}
 
-	//UE_LOG(LogTemp, Log, TEXT("Stamina : %.1f / %.1f"), CurrentStamina, MaxStamina);
 	return bResult;
 }
 
@@ -63,18 +63,12 @@ void UStatActorComponent::StaminaAutoRecoveryPerTick()
 void UStatActorComponent::RecoveryStamina_Implementation(float InAmount)
 {
 	CurrentStamina = FMath::Clamp(CurrentStamina + InAmount, 0.0f, MaxStamina);
-	UE_LOG(LogTemp, Log, TEXT("Stamina : %.1f / %.1f"), CurrentStamina, MaxStamina);
+	OnStaminaChange.Broadcast(CurrentStamina, MaxStamina);
 
 	if (CurrentStamina >= MaxStamina)
 	{
 		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
 		TimerManager.ClearTimer(StaminaAutoRecoveryTimerHandle);
-	}
-	OnStaminaChange.Broadcast(CurrentStamina, MaxStamina); // 블루프린트 디스패처 call과 같다
-
-	if (FMath::IsNearlyZero(CurrentStamina))
-	{
-		OnStaminaEmpty.Broadcast();
 	}
 }
 
@@ -91,7 +85,7 @@ float UStatActorComponent::GetMaxHealth_Implementation() const
 void UStatActorComponent::DamageHealth_Implementation(float InAmount)
 {
 	CurrentHealth -= InAmount;
-	
+
 	if (CurrentHealth < 0.0f)
 	{
 		CurrentHealth = 0;
@@ -101,26 +95,13 @@ void UStatActorComponent::DamageHealth_Implementation(float InAmount)
 	else
 	{
 		OnHealthChange.Broadcast(CurrentHealth, MaxHealth);
-
 	}
-
-
-	//UE_LOG(LogTemp, Log, TEXT("Health : %.1f / %.1f"), CurrentHealth, MaxHealth);
-	
 }
 
 void UStatActorComponent::HealHealth_Implementation(float InAmount)
 {
 	CurrentHealth = FMath::Clamp(CurrentHealth + InAmount, 0.0f, MaxHealth);
 	OnHealthChange.Broadcast(CurrentHealth, MaxHealth);
-	//UE_LOG(LogTemp, Log, TEXT("Health : %.1f / %.1f"), CurrentHealth, MaxHealth);
-
-	OnHealthChange.Broadcast(CurrentHealth, MaxHealth); // 블루프린트 디스패처 call과 같다
-
-	if (FMath::IsNearlyZero(CurrentHealth))
-	{
-		OnDie.Broadcast();
-	}
 }
 
 // Called when the game starts

@@ -6,7 +6,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Component/StatActorComponent.h"
-#include "Components/SkeletalMeshComponent.h"
 #include "AnimNotify/AnimNotifyState_SectionJump.h"
 
 // Sets default values
@@ -24,9 +23,6 @@ AActionCharacter::AActionCharacter()
 
 	StatComponent = CreateDefaultSubobject<UStatActorComponent>(TEXT("Stat"));
 
-	RightHandMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("RightHand"));
-	RightHandMesh->SetupAttachment(GetMesh(), FName("hand_rSocket"));
-
 	bUseControllerRotationYaw = false; // 컨트롤러 움직일 때 폰이 같이 회전되는 것 방지
 	GetCharacterMovement()->bOrientRotationToMovement = true; // 캐릭터 이동방향으로 바라보게 만들기
 }
@@ -34,6 +30,11 @@ AActionCharacter::AActionCharacter()
 UStatActorComponent* AActionCharacter::GetStatComponent() const
 {
 	return StatComponent;
+}
+
+void AActionCharacter::OnWeaponAttackState(bool bEnable)
+{
+	OnOnWeaponAttackStateChanged.Execute(bEnable);
 }
 
 void AActionCharacter::SetSectionJumpNotify(UAnimNotifyState_SectionJump* InSectionJumpNotify)
@@ -69,9 +70,6 @@ void AActionCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// 테스트 전용 코드
-	UE_LOG(LogTemp, Log, TEXT("테스트 스태미나 : %.1f / %.1f"), IInterfaceStamina::Execute_GetCurrentStamina(StatComponent), IInterfaceStamina::Execute_GetMaxStamina(StatComponent));
-
 	SpendBoostStamina(DeltaTime);
 }
 
@@ -91,16 +89,17 @@ void AActionCharacter::SpendBoostStamina(float DeltaTime)
 
 void AActionCharacter::SectionJumpForCombo()
 {
-	if (SectionJumpNotify.IsValid()&&bComboReady)
+	if (SectionJumpNotify.IsValid() && bComboReady)
 	{
 		UAnimMontage* Current = AnimInstance->GetCurrentActiveMontage();
 		AnimInstance->Montage_SetNextSection( // 섹션을 변경한다
-			AnimInstance->Montage_GetCurrentSection(Current), // 이 섹션에서 from
-			SectionJumpNotify->GetNextSectionName(),	// 이 섹션으로 변셩 to
+			AnimInstance->Montage_GetCurrentSection(Current), // 이 섹션에서(from)
+			SectionJumpNotify->GetNextSectionName(),          // 이 섹션으로 변경(to)
 			Current // 적용할 몽타주
 		);
+
 		IInterfaceStamina::Execute_ConsumeStamina(GetStatComponent(), AttackStamina);
-		bComboReady = false;
+		bComboReady = false; // 중복실행 방지
 	}
 }
 
@@ -180,11 +179,11 @@ void AActionCharacter::OnBoostOff(const FInputActionValue& Value)
 
 void AActionCharacter::OnAttackAction(const FInputActionValue& Value)
 {
-	if (AnimInstance&&IInterfaceStamina::Execute_GetCurrentStamina(GetStatComponent())>AttackStamina)
+	if (AnimInstance && IInterfaceStamina::Execute_GetCurrentStamina(GetStatComponent()) > AttackStamina)
 	{
 		if (!AnimInstance->IsAnyMontagePlaying())
 		{
-			//첫번째 콤보 공격
+			// 첫 번째 콤보 공격
 			PlayAnimMontage(AttackMontage);
 			IInterfaceStamina::Execute_ConsumeStamina(GetStatComponent(), AttackStamina);
 		}

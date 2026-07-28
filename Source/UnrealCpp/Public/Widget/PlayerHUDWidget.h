@@ -7,10 +7,9 @@
 #include "PlayerHUDWidget.generated.h"
 
 class UStatBarWidget;
-class UStatActorComponent;
 
 /**
- * 체력바 + 스태미나바를 표시하는 플레이어 HUD (델리게이트 바인딩 방식)
+ * 체력바 + 스태미나바를 표시하는 플레이어 HUD
  */
 UCLASS()
 class UNREALCPP_API UPlayerHUDWidget : public UUserWidget
@@ -19,27 +18,16 @@ class UNREALCPP_API UPlayerHUDWidget : public UUserWidget
 
 protected:
 	virtual void NativeConstruct() override;
-	virtual void NativeDestruct() override;
 
 private:
-	// OnStaminaChange 델리게이트가 방송될 때마다 호출됨
-	UFUNCTION()
-	void HandleStaminaChange(float Current, float Max);
-
-	// OnHealthChange 델리게이트가 방송될 때마다 호출됨
-	UFUNCTION()
-	void HandleHealthChange(float Current, float Max);
+	void InitializePlayerStatBars();
 
 protected:
-	
+	// 위젯 블루프린트 안에 "HealthBar"라는 이름으로 StatBarWidget 인스턴스를 배치해야 함
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UStatBarWidget> HealthBar;
 
-	
+	// 위젯 블루프린트 안에 "StaminaBar"라는 이름으로 StatBarWidget 인스턴스를 배치해야 함
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UStatBarWidget> StaminaBar;
-
-private:
-	// 델리게이트 해제(Remove)를 위해 참조를 들고 있음
-	TWeakObjectPtr<UStatActorComponent> CachedStatComponent;
 };

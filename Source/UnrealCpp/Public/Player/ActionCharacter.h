@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "Interface/InterfaceStat.h"
+#include "InterfaceWeaponUser.h"
 #include "ActionCharacter.generated.h"
 
 class UInputAction;
@@ -13,10 +14,9 @@ class USpringArmComponent;
 class UCameraComponent;
 class UStatActorComponent;
 class UAnimNotifyState_SectionJump;
-class USkeletalMeshComponent;
 
 UCLASS()
-class UNREALCPP_API AActionCharacter : public ACharacter, public IInterfaceStat
+class UNREALCPP_API AActionCharacter : public ACharacter, public IInterfaceStat, public IInterfaceWeaponUser
 {
 	GENERATED_BODY()
 
@@ -27,9 +27,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Stat")
 	virtual UStatActorComponent* GetStatComponent() const override;
 
+	virtual void OnWeaponAttackState(bool bEnable) override;
+
+	virtual FOnWeaponAttackStateChanged& GetWeaponAttackStateChangedDelegate() override
+	{
+		return OnOnWeaponAttackStateChanged;
+	};
+
 	void SetSectionJumpNotify(UAnimNotifyState_SectionJump* InSectionJumpNotify);
-
-
 
 protected:
 	// Called when the game starts or when spawned
@@ -51,6 +56,12 @@ protected:
 private:
 	void SpendBoostStamina(float DeltaTime);
 
+	void SectionJumpForCombo(); // 콤보용으로 섹션 점프하는 함수
+
+public:
+	// 공격 판정 On/Off를 무기에게 전달하는 델리게이트
+	FOnWeaponAttackStateChanged OnOnWeaponAttackStateChanged;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UInputAction> IA_Test;
@@ -64,13 +75,16 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UInputAction> IA_Boost;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Action Anims")
 	TObjectPtr<UAnimMontage> RollMontage;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Action Anims")
+	TObjectPtr<UAnimMontage> AttackMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
 	float BoostSpeed = 1200;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
 	float MoveSpeed = 600;
 
 	// 구르기에 필요한 스태미나 코스트
@@ -93,12 +107,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat|Stamina")
 	float StaminaAutoRecoveryInterval = 0.1f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat|Stamina")
+	// 공격 시 소비되는 스태미나 양
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack")
 	float AttackStamina = 5.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TObjectPtr<UAnimMontage> AttackMontage;
-
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -110,18 +121,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UStatActorComponent> StatComponent = nullptr;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<USkeletalMeshComponent> RightHandMesh = nullptr;
-
 private:
 	UPROPERTY()
 	TObjectPtr<UAnimInstance> AnimInstance = nullptr;
 
 	bool bBoostMode = false;
 
+	// 발생한 콤보 노티파이를 저장해 놓는 변수
 	TWeakObjectPtr<UAnimNotifyState_SectionJump> SectionJumpNotify = nullptr;
+
+	// 현재 콤보가 가능한지 확인하기 위한 변수
 	bool bComboReady = false;
-
-	void SectionJumpForCombo(); //콤보용으로 섹션 점프하는 함수
-
 };
