@@ -65,6 +65,17 @@ void AActionCharacter::EqueipWeapon_Implementation(UWeaponDataAsset* InWeaponDat
 	}
 }
 
+void AActionCharacter::OnWeaponDepleted_Implementation()
+{
+	// 소모성 무기의 사용 횟수가 다 되어 무기가 스스로 버려진 뒤 호출됨
+	CurrentWeapon = nullptr;
+
+	if (DefaultWeaponData)
+	{
+		EqueipWeapon_Implementation(DefaultWeaponData); // 기본 무기로 복귀
+	}
+}
+
 UStatActorComponent* AActionCharacter::GetStatComponent() const
 {
 	return StatComponent;
@@ -114,6 +125,11 @@ void AActionCharacter::BeginPlay()
 			StaminaAutoRecoveryInterval,
 			StaminaAutoRecoveryPerTick);
 		StatComponent->InitializeStat(Data);
+	}
+
+	if (!CurrentWeapon.IsValid() && DefaultWeaponData) // 시작할 때 기본 무기를 장비한다
+	{
+		EqueipWeapon_Implementation(DefaultWeaponData);
 	}
 }
 
@@ -182,6 +198,7 @@ void AActionCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(IA_Test, ETriggerEvent::Started, this, &AActionCharacter::OnTestAction);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AActionCharacter::OnMoveAction);
 		EnhancedInputComponent->BindAction(IA_Attack, ETriggerEvent::Started, this, &AActionCharacter::OnAttackAction);
+		EnhancedInputComponent->BindAction(IA_DropWeapon, ETriggerEvent::Started, this, &AActionCharacter::OnDropWeaponAction);
 		EnhancedInputComponent->BindActionValueLambda(IA_Boost, ETriggerEvent::Started,
 			[this](const FInputActionValue& _) {
 				OnBoostOn(_);
@@ -260,5 +277,14 @@ void AActionCharacter::OnAttackAction(const FInputActionValue& Value)
 		{
 			SectionJumpForCombo();
 		}
+	}
+}
+
+void AActionCharacter::OnDropWeaponAction(const FInputActionValue& Value)
+{
+	// 이미 기본 무기를 들고 있으면 버릴 게 없으니 아무 것도 안 함
+	if (DefaultWeaponData && CurrentWeaponData != DefaultWeaponData)
+	{
+		EqueipWeapon_Implementation(DefaultWeaponData);
 	}
 }

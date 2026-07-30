@@ -29,6 +29,9 @@ public:
 	// 무기 장비 함수
 	virtual void EqueipWeapon_Implementation(UWeaponDataAsset* InWeaponData) override;
 
+	// 장비 중인 무기의 사용 횟수가 다 되어 스스로 버려졌을 때 호출 - 기본 무기로 교체함
+	virtual void OnWeaponDepleted_Implementation() override;
+
 	UFUNCTION(BlueprintCallable, Category = "Stat")
 	virtual UStatActorComponent* GetStatComponent() const override;
 
@@ -60,6 +63,7 @@ protected:
 	void OnBoostOn(const FInputActionValue& Value);
 	void OnBoostOff(const FInputActionValue& Value);
 	void OnAttackAction(const FInputActionValue& Value);
+	void OnDropWeaponAction(const FInputActionValue& Value);
 
 private:
 	void SpendBoostStamina(float DeltaTime);
@@ -81,6 +85,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UInputAction> IA_Attack;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UInputAction> IA_DropWeapon;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UInputAction> IA_Boost;
@@ -128,6 +135,10 @@ protected:
 	// 현재 장비한 무기의 데이터 애셋
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item")
 	TObjectPtr<UWeaponDataAsset> CurrentWeaponData = nullptr;
+
+	// 기본 무기 데이터 (사용 횟수 무한) - 장비된 무기가 없을 때, 또는 소모성 무기가 다 떨어졌을 때 자동으로 장비됨
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
+	TObjectPtr<UWeaponDataAsset> DefaultWeaponData = nullptr;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

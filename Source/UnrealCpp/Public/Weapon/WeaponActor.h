@@ -28,6 +28,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void DropWeapon();
 
+	// 남은 사용 횟수를 반환 (무한 사용 무기면 -1)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	int32 GetRemainingUseCount() const { return RemainingUseCount; }
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -46,6 +50,13 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void AttackEnable(bool bEnable);
+
+private:
+	// 사용 횟수를 1 소모시키고, 소모성 무기의 사용 횟수가 다 되면 버려지도록 예약함
+	void ConsumeUse();
+
+	// 무기를 던져서 버리고, 소유자에게 기본 무기로 교체하도록 알림
+	void DiscardWeapon();
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -72,4 +83,10 @@ private:
 
 	// PhysicsDelay용 타이머 핸들
 	FTimerHandle PhysicsDelayTimerHandle;
+
+	// 소모성 무기의 남은 사용 횟수 (무한 사용 무기면 -1)
+	int32 RemainingUseCount = -1;
+
+	// 이번 공격이 끝나면 사용 횟수 소진으로 버려질지 여부
+	bool bPendingDiscard = false;
 };

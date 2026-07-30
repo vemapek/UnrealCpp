@@ -40,7 +40,7 @@ private:
 protected:
 	// 메시의 기본 위치
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base Data")
-	FVector MeshBaseLocation = FVector(0, 0, 50.0f);
+	FVector MeshBaseLocation = FVector(0, 0, 0.0f);
 
 	// 맵에 있을 때 위아래로 왕복하는 모습용 커브
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect|Default")

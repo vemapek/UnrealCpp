@@ -31,4 +31,8 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void EqueipWeapon(UWeaponDataAsset* InWeaponData);
+
+	// 장비 중인 무기의 사용 횟수가 다 되어 스스로 버려졌을 때 호출됨 (기본 무기로 교체하는 용도)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void OnWeaponDepleted();
 };

@@ -7,6 +7,7 @@
 #include "Data/WeaponDataAsset.h"
 #include "UnrealCpp/UnrealCpp.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
 
 // Sets default values
 AWeaponActor::AWeaponActor()
@@ -42,6 +43,10 @@ void AWeaponActor::InitializeWeapon(UWeaponDataAsset* InData)
 	// HitArea 크기 조정
 	HitArea->SetCapsuleHalfHeight(WeaponData->HitAreaHalfHeight);
 	HitArea->SetCapsuleRadius(WeaponData->HitAreaRadius);
+
+	// 사용 횟수 초기화 (소모성 무기가 아니면 무한으로 취급)
+	RemainingUseCount = WeaponData->bIsConsumable ? WeaponData->MaxUseCount : -1;
+	bPendingDiscard = false;
 }
 
 void AWeaponActor::EquipToTarget(AActor* Target)
@@ -131,6 +136,23 @@ void AWeaponActor::OnHitAreaBeginOverlap(UPrimitiveComponent* InOverlappedCompon
 	UE_LOG(LogTemp, Log, TEXT("오버랩 된 대상 : %s"), *InOtherActor->GetName());
 
 	UGameplayStatics::ApplyDamage(InOtherActor, Damage, OwnerCharacter->GetController(), this, nullptr);
+
+
+	// 맞은 지점에 이펙트 재생
+	if (WeaponData && WeaponData->HitEffect)
+	{
+		FVector EffectLocation = (bFromSweep && InSweepResult.bBlockingHit)
+			? FVector(InSweepResult.ImpactPoint)  
+			: HitArea->GetComponentLocation();
+
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			WeaponData->HitEffect,
+			EffectLocation,
+			GetActorRotation()
+		);
+	}
+
 }
 
 void AWeaponActor::AttackEnable(bool bEnable)
@@ -138,9 +160,38 @@ void AWeaponActor::AttackEnable(bool bEnable)
 	if (bEnable)
 	{
 		HitArea->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		ConsumeUse(); // 공격 1회 사용 처리
 	}
 	else
 	{
 		HitArea->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		if (bPendingDiscard) // 방금 공격이 마지막 사용 횟수였다면 이제 버림
+		{
+			DiscardWeapon();
+		}
+	}
+}
+
+void AWeaponActor::ConsumeUse()
+{
+	if (RemainingUseCount < 0) return; // 무한 사용 무기는 소모되지 않음
+
+	RemainingUseCount = FMath::Max(RemainingUseCount - 1, 0);
+	if (RemainingUseCount == 0)
+	{
+		bPendingDiscard = true; // 이번 공격의 판정이 끝나면 버려지도록 예약
+	}
+}
+
+void AWeaponActor::DiscardWeapon()
+{
+	AActor* PreviousOwner = OwnerCharacter.Get();
+
+	DropWeapon(); // 물리적으로 던져서 버림 (OwnerCharacter는 이 안에서 nullptr로 초기화됨)
+
+	if (PreviousOwner && PreviousOwner->Implements<UInterfaceWeaponUser>())
+	{
+		IInterfaceWeaponUser::Execute_OnWeaponDepleted(PreviousOwner); // 소유자에게 기본 무기로 교체하도록 알림
 	}
 }
