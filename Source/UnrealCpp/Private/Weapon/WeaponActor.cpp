@@ -64,6 +64,7 @@ void AWeaponActor::DropWeapon()
 	Mesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	Mesh->SetCollisionResponseToChannel(ECC_Player, ECollisionResponse::ECR_Ignore);
 	Mesh->SetSimulatePhysics(true);
+	Mesh->SetMassOverrideInKg(NAME_None, 0.8f, true);
 	HitArea->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	// 일정 시간 동안 무기와 플레이어가 충돌 안 하게 설정
@@ -87,7 +88,7 @@ void AWeaponActor::DropWeapon()
 	FVector AngularImpulse = FVector(
 		FMath::RandRange(-200.0f, 200.0f)
 	) + GetActorForwardVector() * 1000.0f;
-	Mesh->AddAngularImpulseInDegrees(AngularImpulse, NAME_None, true);
+	//Mesh->AddAngularImpulseInDegrees(AngularImpulse, NAME_None, true);
 
 	// DropLifeSpan초 후에 이 액터 제거하기
 	SetLifeSpan(DropLifeSpan);
