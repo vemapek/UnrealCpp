@@ -3,6 +3,9 @@
 #include "Item/PickupBase.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "NiagaraComponent.h"
+
+
 
 // Sets default values
 APickupBase::APickupBase()
@@ -16,6 +19,10 @@ APickupBase::APickupBase()
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	Mesh->SetupAttachment(SphereCollision);
+
+	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("Niagara Component"));
+	NiagaraComponent->SetupAttachment(Mesh);
+
 }
 
 // Called when the game starts or when spawned

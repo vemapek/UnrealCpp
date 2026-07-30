@@ -60,7 +60,6 @@ protected:
 	void OnBoostOn(const FInputActionValue& Value);
 	void OnBoostOff(const FInputActionValue& Value);
 	void OnAttackAction(const FInputActionValue& Value);
-	void OnRollAction(const FInputActionValue& Value);
 
 private:
 	void SpendBoostStamina(float DeltaTime);
@@ -85,9 +84,6 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UInputAction> IA_Boost;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<UInputAction> IA_Roll;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Action Anims")
 	TObjectPtr<UAnimMontage> RollMontage;

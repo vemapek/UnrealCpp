@@ -83,15 +83,16 @@ void AActionCharacter::SetSectionJumpNotify(UAnimNotifyState_SectionJump* InSect
 
 float AActionCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	UE_LOG(LogTemp, Warning, TEXT("TakeDamage 호출됨: DamageAmount=%.1f"), DamageAmount);
-	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-	if (StatComponent && ActualDamage > 0.0f)
+	if (UStatActorComponent* StatComp = GetStatComponent())
 	{
-		IInterfaceHealth::Execute_DamageHealth(StatComponent, ActualDamage);
+		IInterfaceHealth::Execute_DamageHealth(StatComp, Damage);
+
+		UE_LOG(LogTemp, Log, TEXT("%.1f 데미지를 입었습니다. (공격자:%s)"), Damage, *EventInstigator->GetName());
 	}
 
-	return ActualDamage;
+	return Damage;
 }
 
 // Called when the game starts or when spawned
@@ -149,7 +150,6 @@ void AActionCharacter::SectionJumpForCombo()
 			Current // 적용할 몽타주
 		);
 
-		OnWeaponAttackState(false);
 		IInterfaceStamina::Execute_ConsumeStamina(GetStatComponent(), AttackStamina);
 		bComboReady = false; // 중복실행 방지
 	}
@@ -182,7 +182,6 @@ void AActionCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(IA_Test, ETriggerEvent::Started, this, &AActionCharacter::OnTestAction);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AActionCharacter::OnMoveAction);
 		EnhancedInputComponent->BindAction(IA_Attack, ETriggerEvent::Started, this, &AActionCharacter::OnAttackAction);
-		EnhancedInputComponent->BindAction(IA_Roll, ETriggerEvent::Started, this, &AActionCharacter::OnRollAction);
 		EnhancedInputComponent->BindActionValueLambda(IA_Boost, ETriggerEvent::Started,
 			[this](const FInputActionValue& _) {
 				OnBoostOn(_);
@@ -196,7 +195,26 @@ void AActionCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 void AActionCharacter::OnTestAction(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Log, TEXT("TestAction 실행"));
+	if (!RollMontage) return;
+
+	if (!AnimInstance)
+	{
+		AnimInstance = GetMesh()->GetAnimInstance();
+	}
+
+	// 몽타주 재생 중이 아닐 때만 구르기 시도 (재생 중엔 스태미나 소모 자체를 안 함)
+	if (AnimInstance && !AnimInstance->IsAnyMontagePlaying())
+	{
+		if (IInterfaceStamina::Execute_ConsumeStamina(StatComponent, RollStaminaCost)) // 스태미나 소비 시도 후 소비되면 구르기 실행
+		{
+			if (!GetLastMovementInputVector().IsNearlyZero()) // 이동 입력 중이면
+			{
+				SetActorRotation(GetLastMovementInputVector().Rotation()); // 입력방향으로 즉시 회전해서 구르기
+			}
+
+			PlayAnimMontage(RollMontage);
+		}
+	}
 }
 
 void AActionCharacter::OnMoveAction(const FInputActionValue& Value)
@@ -236,36 +254,11 @@ void AActionCharacter::OnAttackAction(const FInputActionValue& Value)
 		{
 			// 첫 번째 콤보 공격
 			PlayAnimMontage(AttackMontage);
-			OnWeaponAttackState(false);
 			IInterfaceStamina::Execute_ConsumeStamina(GetStatComponent(), AttackStamina);
 		}
 		else if (AnimInstance->GetCurrentActiveMontage() == AttackMontage)
 		{
 			SectionJumpForCombo();
-		}
-	}
-}
-
-void AActionCharacter::OnRollAction(const FInputActionValue& Value)
-{
-	if (!RollMontage) return;
-
-	if (!AnimInstance)
-	{
-		AnimInstance = GetMesh()->GetAnimInstance();
-	}
-
-	// 몽타주 재생 중이 아닐 때만 구르기 시도 (재생 중엔 스태미나 소모 자체를 안 함)
-	if (AnimInstance && !AnimInstance->IsAnyMontagePlaying())
-	{
-		if (IInterfaceStamina::Execute_ConsumeStamina(StatComponent, RollStaminaCost)) // 스태미나 소비 시도 후 소비되면 구르기 실행
-		{
-			if (!GetLastMovementInputVector().IsNearlyZero()) // 이동 입력 중이면
-			{
-				SetActorRotation(GetLastMovementInputVector().Rotation()); // 입력방향으로 즉시 회전해서 구르기
-			}
-
-			PlayAnimMontage(RollMontage);
 		}
 	}
 }

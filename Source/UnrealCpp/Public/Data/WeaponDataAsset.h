@@ -12,7 +12,7 @@ class UStaticMesh;
 /**
  *
  */
-UCLASS()
+UCLASS(BlueprintType)
 class UNREALCPP_API UWeaponDataAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
@@ -42,7 +42,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "HitArea")
 	float HitAreaRadius = 30.0f;
 
-	// 이 무기가 입히는 데미지량
+	// 무기의 공격력
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponData")
-	float Damage = 10.0f;
+	float AttackPower = 10.0f;
 };

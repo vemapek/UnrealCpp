@@ -7,6 +7,7 @@
 #include "PickupBase.generated.h"
 
 class USphereComponent;
+class UNiagaraComponent;
 
 UCLASS()
 class UNREALCPP_API APickupBase : public AActor
@@ -35,4 +36,7 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UStaticMeshComponent> Mesh = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UNiagaraComponent> NiagaraComponent = nullptr;
 };

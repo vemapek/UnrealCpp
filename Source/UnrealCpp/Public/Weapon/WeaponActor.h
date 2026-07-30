@@ -54,18 +54,22 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UCapsuleComponent> HitArea = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	FName AttachSocketName = TEXT("hand_rSocket");
-
-	// 이 무기가 입히는 데미지량
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float Damage = 10.0f;
-
-	// 이 무기를 생성한 데이터 애셋 (장착 시 InitializeWeapon으로 전달됨)
+	// 무기 데이터 애셋
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TObjectPtr<UWeaponDataAsset> WeaponData;
+
+	// 무기가 드랍된 후 사라질 때까지의 시간
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float DropLifeSpan = 10.0f;
+
+	// 드랍 직후에 플레이어와 물리 상호작용이 안 되는 시간
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float PhysicsDelay = 0.8f;
 
 private:
 	// 무기를 장비하고 있는 대상
 	TWeakObjectPtr<ACharacter> OwnerCharacter = nullptr;
+
+	// PhysicsDelay용 타이머 핸들
+	FTimerHandle PhysicsDelayTimerHandle;
 };

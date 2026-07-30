@@ -19,7 +19,9 @@ void APickupWeapon::OnPickup(AActor* InTarget)
 {
 	Super::OnPickup(InTarget);
 
-	IInterfaceWeaponUser::Execute_EqueipWeapon(InTarget, WeaponData);
-
-	Destroy();
+	if (InTarget && InTarget->Implements<UInterfaceWeaponUser>())
+	{
+		IInterfaceWeaponUser::Execute_EqueipWeapon(InTarget, WeaponData);
+		Destroy();
+	}
 }
