@@ -13,7 +13,7 @@
 AWeaponActor::AWeaponActor()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RootMesh"));
 	SetRootComponent(Mesh);
@@ -43,6 +43,8 @@ void AWeaponActor::InitializeWeapon(UWeaponDataAsset* InData)
 	// HitArea 크기 조정
 	HitArea->SetCapsuleHalfHeight(WeaponData->HitAreaHalfHeight);
 	HitArea->SetCapsuleRadius(WeaponData->HitAreaRadius);
+
+	TrailFX = WeaponData->TrailFX;
 
 	// 사용 횟수 초기화 (소모성 무기가 아니면 무한으로 취급)
 	RemainingUseCount = WeaponData->bIsConsumable ? WeaponData->MaxUseCount : -1;
@@ -161,12 +163,13 @@ void AWeaponActor::AttackEnable(bool bEnable)
 	if (bEnable)
 	{
 		HitArea->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		ConsumeUse(); // 공격 1회 사용 처리
+		ConsumeUse(); // 공격 1회 사용 처리]
+		StartTrail();
 	}
 	else
 	{
 		HitArea->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
+		StopTrail();
 		if (bPendingDiscard) // 방금 공격이 마지막 사용 횟수였다면 이제 버림
 		{
 			DiscardWeapon();
@@ -194,5 +197,86 @@ void AWeaponActor::DiscardWeapon()
 	if (PreviousOwner && PreviousOwner->Implements<UInterfaceWeaponUser>())
 	{
 		IInterfaceWeaponUser::Execute_OnWeaponDepleted(PreviousOwner); // 소유자에게 기본 무기로 교체하도록 알림
+	}
+}
+
+
+
+void AWeaponActor::StartTrail()
+{
+	if (!TrailFX) return;
+
+	if (!TrailComponent)
+	{
+		TrailComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			TrailFX, Mesh, NAME_None,
+			FVector::ZeroVector, FRotator::ZeroRotator,
+			EAttachLocation::KeepRelativeOffset, false
+		);
+	}
+	else
+	{
+		TrailComponent->Activate(true);
+	}
+
+	bIsTrailActive = true;
+
+	// 디버그용 상태 체크
+	FTimerHandle CheckTimer;
+	GetWorld()->GetTimerManager().SetTimer(CheckTimer, [this]()
+		{
+			if (TrailComponent)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("=== Trail 상태 체크 ==="));
+				UE_LOG(LogTemp, Warning, TEXT("IsActive=%d"), TrailComponent->IsActive());
+				UE_LOG(LogTemp, Warning, TEXT("IsVisible=%d"), TrailComponent->IsVisible());
+				UE_LOG(LogTemp, Warning, TEXT("IsRegistered=%d"), TrailComponent->IsRegistered());
+				UE_LOG(LogTemp, Warning, TEXT("HiddenInGame=%d"), TrailComponent->bHiddenInGame);
+				UE_LOG(LogTemp, Warning, TEXT("월드위치=%s"), *TrailComponent->GetComponentLocation().ToString());
+
+				if (UNiagaraSystem* Asset = TrailComponent->GetAsset())
+				{
+					UE_LOG(LogTemp, Warning, TEXT("에셋=%s"), *Asset->GetName());
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("에셋 = NULL!"));
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("TrailComponent 자체가 NULL!"));
+			}
+		}, 0.5f, false);
+}
+
+void AWeaponActor::StopTrail()
+{
+	bIsTrailActive = false;
+	if (TrailComponent)
+	{
+		TrailComponent->Deactivate();
+	}
+}
+
+void AWeaponActor::UpdateTrail()
+{
+	if (!TrailComponent || !Mesh) return;
+
+	FVector Start = Mesh->GetSocketLocation(TEXT("TrailStart"));
+	FVector End = Mesh->GetSocketLocation(TEXT("TrailEnd"));
+
+
+	TrailComponent->SetVectorParameter(TEXT("User.TrailStart"), Start);
+	TrailComponent->SetVectorParameter(TEXT("User.TrailEnd"), End);
+}
+
+void AWeaponActor::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (bIsTrailActive)
+	{
+		UpdateTrail();
 	}
 }

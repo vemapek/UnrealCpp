@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 #include "WeaponActor.generated.h"
 
 class ACharacter;
@@ -89,4 +91,20 @@ private:
 
 	// 이번 공격이 끝나면 사용 횟수 소진으로 버려질지 여부
 	bool bPendingDiscard = false;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "VFX")
+	class UNiagaraSystem* TrailFX;
+
+	UPROPERTY()
+	class UNiagaraComponent* TrailComponent;
+
+	void StartTrail();
+	void StopTrail();
+	void UpdateTrail();
+
+	bool bIsTrailActive = false;
+
+public:
+	virtual void Tick(float DeltaTime) override;
 };

@@ -57,4 +57,7 @@ public:
 	// 소모성 무기일 때 사용 가능한 최대 횟수 (공격 1회당 1씩 소모되며, 0이 되면 자동으로 버려짐)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponData", meta = (EditCondition = "bIsConsumable", ClampMin = "1"))
 	int32 MaxUseCount = 1;
+
+	UPROPERTY(EditAnywhere, Category = "VFX")
+	class UNiagaraSystem* TrailFX;
 };
