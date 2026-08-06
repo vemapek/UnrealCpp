@@ -12,6 +12,8 @@ class ACharacter;
 class UCapsuleComponent;
 class UWeaponDataAsset;
 
+DECLARE_DELEGATE_OneParam(FOnWeaponDrop, UWeaponDataAsset*);
+
 UCLASS()
 class UNREALCPP_API AWeaponActor : public AActor
 {
@@ -33,6 +35,20 @@ public:
 	// 남은 사용 횟수를 반환 (무한 사용 무기면 -1)
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32 GetRemainingUseCount() const { return RemainingUseCount; }
+
+	// 아직 사용 가능한 무기인지 여부 (무한 사용 무기면 항상 true)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool CanUse() const { return RemainingUseCount != 0; }
+
+	// 사용 횟수를 무기 데이터의 초기값으로 되돌림 (같은 종류의 무기를 다시 주웠을 때 사용)
+	UFUNCTION(BlueprintCallable)
+	void ResetUseCount();
+
+	// 범위 공격 등에 사용할 무기의 타격 지점 위치
+	// 참고: unrealcpp의 Mesh는 StaticMeshComponent라 10th처럼 "Tip"/"Base" 소켓에 의존하지 않고
+	// 이미 타격 판정용으로 쓰이는 HitArea 캡슐의 위치를 그대로 사용한다.
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FVector GetWeaponImpactLocation() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -59,6 +75,10 @@ private:
 
 	// 무기를 던져서 버리고, 소유자에게 기본 무기로 교체하도록 알림
 	void DiscardWeapon();
+
+public:
+	// 사용 횟수가 다 되어 스스로 버려졌을 때 알려주는 델리게이트(무기 컴포넌트가 바인딩)
+	FOnWeaponDrop OnWeaponDrop;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

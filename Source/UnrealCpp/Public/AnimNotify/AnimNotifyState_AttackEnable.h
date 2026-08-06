@@ -27,7 +27,4 @@ protected:
 		USkeletalMeshComponent* MeshComp,
 		UAnimSequenceBase* Animation,
 		const FAnimNotifyEventReference& EventReference) override;
-
-private:
-	IInterfaceWeaponUser* WeaponOwner = nullptr;
 };

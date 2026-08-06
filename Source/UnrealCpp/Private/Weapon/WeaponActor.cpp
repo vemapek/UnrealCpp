@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
 #include "Interface/InterfaceWeaponUser.h"
+#include "Component/WeaponComponent.h"
 #include "Data/WeaponDataAsset.h"
 #include "UnrealCpp/UnrealCpp.h"
 #include "Kismet/GameplayStatics.h"
@@ -98,6 +99,19 @@ void AWeaponActor::DropWeapon()
 	OwnerCharacter = nullptr;
 }
 
+void AWeaponActor::ResetUseCount()
+{
+	if (!WeaponData) return;
+
+	RemainingUseCount = WeaponData->bIsConsumable ? WeaponData->MaxUseCount : -1;
+	bPendingDiscard = false;
+}
+
+FVector AWeaponActor::GetWeaponImpactLocation() const
+{
+	return HitArea ? HitArea->GetComponentLocation() : GetActorLocation();
+}
+
 // Called when the game starts or when spawned
 void AWeaponActor::BeginPlay()
 {
@@ -127,7 +141,10 @@ void AWeaponActor::OnEquipped(AActor* InOwner)
 
 		if (IInterfaceWeaponUser* WeaponUser = Cast<IInterfaceWeaponUser>(OwnerCharacter))
 		{
-			WeaponUser->GetWeaponAttackStateChangedDelegate().BindUFunction(this, FName("AttackEnable"));
+			if (UWeaponComponent* WeaponComp = WeaponUser->GetWeaponComponent())
+			{
+				WeaponComp->OnWeaponAttackStateChanged.BindUFunction(this, FName("AttackEnable"));
+			}
 		}
 	}
 }
@@ -145,7 +162,7 @@ void AWeaponActor::OnHitAreaBeginOverlap(UPrimitiveComponent* InOverlappedCompon
 	if (WeaponData && WeaponData->HitEffect)
 	{
 		FVector EffectLocation = (bFromSweep && InSweepResult.bBlockingHit)
-			? FVector(InSweepResult.ImpactPoint)  
+			? FVector(InSweepResult.ImpactPoint)
 			: HitArea->GetComponentLocation();
 
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
@@ -190,14 +207,11 @@ void AWeaponActor::ConsumeUse()
 
 void AWeaponActor::DiscardWeapon()
 {
-	AActor* PreviousOwner = OwnerCharacter.Get();
+	UWeaponDataAsset* PreviousWeaponData = WeaponData;
 
 	DropWeapon(); // 물리적으로 던져서 버림 (OwnerCharacter는 이 안에서 nullptr로 초기화됨)
 
-	if (PreviousOwner && PreviousOwner->Implements<UInterfaceWeaponUser>())
-	{
-		IInterfaceWeaponUser::Execute_OnWeaponDepleted(PreviousOwner); // 소유자에게 기본 무기로 교체하도록 알림
-	}
+	OnWeaponDrop.ExecuteIfBound(PreviousWeaponData); // 무기 컴포넌트에게 알려서 기본 무기로 교체하도록 함
 }
 
 

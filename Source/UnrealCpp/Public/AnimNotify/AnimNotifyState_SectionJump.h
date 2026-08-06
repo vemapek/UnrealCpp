@@ -7,10 +7,8 @@
 #include "AnimNotifyState_SectionJump.generated.h"
 
 /**
- * 
+ *
  */
-class AActionCharacter;
-
 UCLASS()
 class UNREALCPP_API UAnimNotifyState_SectionJump : public UAnimNotifyState
 {
@@ -19,7 +17,7 @@ class UNREALCPP_API UAnimNotifyState_SectionJump : public UAnimNotifyState
 
 public:
 	inline FName GetNextSectionName() const { return NextSectionName; }
-	
+
 protected:
 	virtual void NotifyBegin(
 		USkeletalMeshComponent* MeshComp,
@@ -27,14 +25,11 @@ protected:
 		float TotalDuration,
 		const FAnimNotifyEventReference& EventReference) override;
 	virtual void NotifyEnd(
-		USkeletalMeshComponent* MeshComp, 
-		UAnimSequenceBase* Animation, 
+		USkeletalMeshComponent* MeshComp,
+		UAnimSequenceBase* Animation,
 		const FAnimNotifyEventReference& EventReference)override;
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FName NextSectionName;
-
-private:
-	TWeakObjectPtr<AActionCharacter> OwnerCharacter = nullptr;
 };

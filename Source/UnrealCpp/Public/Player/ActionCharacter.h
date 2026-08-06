@@ -13,8 +13,7 @@ class UInputAction;
 class USpringArmComponent;
 class UCameraComponent;
 class UStatActorComponent;
-class UAnimNotifyState_SectionJump;
-class AWeaponActor;
+class UWeaponComponent;
 class UWeaponDataAsset;
 
 UCLASS()
@@ -26,23 +25,14 @@ public:
 	// Sets default values for this character's properties
 	AActionCharacter();
 
-	// 무기 장비 함수
+	// 무기 장비 함수 (WeaponComponent로 전달)
 	virtual void EqueipWeapon_Implementation(UWeaponDataAsset* InWeaponData) override;
-
-	// 장비 중인 무기의 사용 횟수가 다 되어 스스로 버려졌을 때 호출 - 기본 무기로 교체함
-	virtual void OnWeaponDepleted_Implementation() override;
 
 	UFUNCTION(BlueprintCallable, Category = "Stat")
 	virtual UStatActorComponent* GetStatComponent() const override;
 
-	virtual void OnWeaponAttackState(bool bEnable) override;
-
-	virtual FOnWeaponAttackStateChanged& GetWeaponAttackStateChangedDelegate() override
-	{
-		return OnOnWeaponAttackStateChanged;
-	};
-
-	void SetSectionJumpNotify(UAnimNotifyState_SectionJump* InSectionJumpNotify);
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	virtual UWeaponComponent* GetWeaponComponent() const override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -68,14 +58,6 @@ protected:
 private:
 	void SpendBoostStamina(float DeltaTime);
 
-	void SectionJumpForCombo(); // 콤보용으로 섹션 점프하는 함수
-
-	void SpawnWeaponActor();
-
-public:
-	// 공격 판정 On/Off를 무기에게 전달하는 델리게이트
-	FOnWeaponAttackStateChanged OnOnWeaponAttackStateChanged;
-
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UInputAction> IA_Test;
@@ -94,9 +76,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Action Anims")
 	TObjectPtr<UAnimMontage> RollMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Action Anims")
-	TObjectPtr<UAnimMontage> AttackMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Move")
 	float BoostSpeed = 1200;
@@ -128,18 +107,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack")
 	float AttackStamina = 5.0f;
 
-	// 현재 장비 중인 무기
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item")
-	TWeakObjectPtr<AWeaponActor> CurrentWeapon = nullptr;
-
-	// 현재 장비한 무기의 데이터 애셋
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item")
-	TObjectPtr<UWeaponDataAsset> CurrentWeaponData = nullptr;
-
-	// 기본 무기 데이터 (사용 횟수 무한) - 장비된 무기가 없을 때, 또는 소모성 무기가 다 떨어졌을 때 자동으로 장비됨
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item")
-	TObjectPtr<UWeaponDataAsset> DefaultWeaponData = nullptr;
-
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USpringArmComponent> CameraSpringArmComponent = nullptr;
@@ -150,15 +117,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UStatActorComponent> StatComponent = nullptr;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UWeaponComponent> WeaponComponent = nullptr;
+
 private:
 	UPROPERTY()
 	TObjectPtr<UAnimInstance> AnimInstance = nullptr;
 
 	bool bBoostMode = false;
-
-	// 발생한 콤보 노티파이를 저장해 놓는 변수
-	TWeakObjectPtr<UAnimNotifyState_SectionJump> SectionJumpNotify = nullptr;
-
-	// 현재 콤보가 가능한지 확인하기 위한 변수
-	bool bComboReady = false;
 };

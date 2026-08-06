@@ -4,11 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include "Component/WeaponComponent.h"
 #include "InterfaceWeaponUser.generated.h"
 
 class UWeaponDataAsset;
-
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnWeaponAttackStateChanged, bool, bEnable);
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
@@ -26,13 +25,8 @@ class UNREALCPP_API IInterfaceWeaponUser
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual void OnWeaponAttackState(bool bEnable) = 0;
-	virtual FOnWeaponAttackStateChanged& GetWeaponAttackStateChangedDelegate() = 0;
+	virtual UWeaponComponent* GetWeaponComponent() const = 0;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void EqueipWeapon(UWeaponDataAsset* InWeaponData);
-
-	// 장비 중인 무기의 사용 횟수가 다 되어 스스로 버려졌을 때 호출됨 (기본 무기로 교체하는 용도)
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void OnWeaponDepleted();
 };

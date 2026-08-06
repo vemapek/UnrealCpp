@@ -47,6 +47,18 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponData")
 	float AttackPower = 10.0f;
 
+	// 무기의 범위공격력
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponData")
+	float AreaAttackPower = 10.0f;
+
+	// 무기의 범위 공격의 반지름(안쪽, 이 안쪽은 100% 데미지)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponData")
+	float AreaAttackInnerRadius = 100.0f;
+
+	// 무기의 범위 공격의 반지름(바깥, Inner ~ Outter범위는 거리에 따라 감소)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponData")
+	float AreaAttackOutterRadius = 300.0f;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effect")
 	TObjectPtr<UNiagaraSystem> HitEffect;
 
@@ -57,6 +69,10 @@ public:
 	// 소모성 무기일 때 사용 가능한 최대 횟수 (공격 1회당 1씩 소모되며, 0이 되면 자동으로 버려짐)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "WeaponData", meta = (EditCondition = "bIsConsumable", ClampMin = "1"))
 	int32 MaxUseCount = 1;
+
+	// 무기의 공격 애니메이션 몽타주
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "WeaponData")
+	TObjectPtr<UAnimMontage> AttackMontage;
 
 	UPROPERTY(EditAnywhere, Category = "VFX")
 	class UNiagaraSystem* TrailFX;
