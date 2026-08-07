@@ -5,7 +5,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Interface/InterfaceWeaponUser.h"
 #include "Component/WeaponComponent.h"
-#include "Data/WeaponDataAsset.h"
+#include "Data/Item/WeaponDataAsset.h"
 #include "UnrealCpp/UnrealCpp.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
@@ -207,11 +207,7 @@ void AWeaponActor::ConsumeUse()
 
 void AWeaponActor::DiscardWeapon()
 {
-	UWeaponDataAsset* PreviousWeaponData = WeaponData;
-
-	DropWeapon(); // 물리적으로 던져서 버림 (OwnerCharacter는 이 안에서 nullptr로 초기화됨)
-
-	OnWeaponDrop.ExecuteIfBound(PreviousWeaponData); // 무기 컴포넌트에게 알려서 기본 무기로 교체하도록 함
+	OnWeaponDrop.ExecuteIfBound(WeaponData);
 }
 
 

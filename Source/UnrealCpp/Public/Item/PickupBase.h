@@ -10,6 +10,7 @@ class USphereComponent;
 class UStaticMeshComponent;
 class UNiagaraComponent;
 class UCurveFloat;
+class UItemDataAsset;
 
 UCLASS()
 class UNREALCPP_API APickupBase : public AActor
@@ -19,6 +20,9 @@ class UNREALCPP_API APickupBase : public AActor
 public:
 	// Sets default values for this actor's properties
 	APickupBase();
+
+	// 픽업이 어떤 아이템 데이터를 나타내는지 셋업하는 공통 진입점 (하위 클래스에서 확장)
+	virtual void InitializePickup(UItemDataAsset* InData);
 
 protected:
 	// Called when the game starts or when spawned
@@ -38,6 +42,10 @@ private:
 	bool IsCurveAssetReady() const;
 
 protected:
+	// 픽업 시 획득할 데이터 애셋
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base Data")
+	TObjectPtr<UItemDataAsset> DataAsset;
+
 	// 메시의 기본 위치
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base Data")
 	FVector MeshBaseLocation = FVector(0, 0, 0.0f);

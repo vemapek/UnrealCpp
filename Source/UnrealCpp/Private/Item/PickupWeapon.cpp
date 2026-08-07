@@ -2,21 +2,44 @@
 
 #include "Item/PickupWeapon.h"
 #include "Interface/InterfaceWeaponUser.h"
-#include "Data/WeaponDataAsset.h"
+#include "Data/Item/WeaponDataAsset.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+
+void APickupWeapon::InitializePickup(UItemDataAsset* InData)
+{
+	Super::InitializePickup(InData);
+
+	UE_LOG(LogTemp, Warning, TEXT("[Pickup] InitializePickup: InData=%s, DataAsset(member)=%s"),
+		InData ? *InData->GetName() : TEXT("NULL"),
+		DataAsset ? *DataAsset->GetName() : TEXT("NULL"));
+
+	if (DataAsset)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Pickup] DataAsset Class=%s"), *DataAsset->GetClass()->GetName());
+
+		WeaponData = Cast<UWeaponDataAsset>(DataAsset);
+		UE_LOG(LogTemp, Warning, TEXT("[Pickup] Cast to WeaponDataAsset result Valid=%d"), WeaponData.IsValid());
+
+		if (WeaponData.IsValid())
+		{
+			if (UStaticMesh* StaticMeshData = WeaponData->Mesh.LoadSynchronous())
+			{
+				Mesh->SetStaticMesh(StaticMeshData);
+				Mesh->SetRelativeLocation(MeshBaseLocation + WeaponData->SpawnLocationOffset);
+			}
+		}
+	}
+}
 
 void APickupWeapon::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-	if (WeaponData)
-	{
-		if (UStaticMesh* StaticMeshData = WeaponData->Mesh.LoadSynchronous())
-		{
-			Mesh->SetStaticMesh(StaticMeshData);
-			Mesh->SetRelativeLocation(MeshBaseLocation + WeaponData->LocationOffset);
-		}
-	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[Pickup] OnConstruction called on %s, DataAsset=%s"),
+		*GetName(), DataAsset ? *DataAsset->GetName() : TEXT("NULL"));
+
+	InitializePickup(DataAsset);
 }
 
 void APickupWeapon::OnPickup(AActor* InTarget)
@@ -80,9 +103,14 @@ void APickupWeapon::OnUpdatePickupEffect()
 void APickupWeapon::OnFinishPickupEffect()
 {
 	GetWorldTimerManager().ClearTimer(PickupEffectTimerHandle);
-	if (TargetActor.IsValid())
+
+	UE_LOG(LogTemp, Warning, TEXT("[Pickup] TargetActor Valid=%d, WeaponData Valid=%d"),
+		TargetActor.IsValid(), WeaponData.IsValid());
+
+	if (TargetActor.IsValid() && WeaponData.IsValid())
 	{
-		IInterfaceWeaponUser::Execute_EqueipWeapon(TargetActor.Get(), WeaponData);
+		UE_LOG(LogTemp, Warning, TEXT("[Pickup] Calling EqueipWeapon on %s"), *TargetActor->GetName());
+		IInterfaceWeaponUser::Execute_EqueipWeapon(TargetActor.Get(), WeaponData.Get());
 	}
 	Destroy();
 }

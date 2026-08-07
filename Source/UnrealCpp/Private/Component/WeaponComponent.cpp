@@ -4,7 +4,7 @@
 #include "UnrealCpp/UnrealCpp.h"
 #include "Interface/InterfaceWeaponUser.h"
 #include "Weapon/WeaponActor.h"
-#include "Data/WeaponDataAsset.h"
+#include "Data/Item/WeaponDataAsset.h"
 #include "AnimNotify/AnimNotifyState_SectionJump.h"
 
 #include "Kismet/GameplayStatics.h"
@@ -55,6 +55,8 @@ void UWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UWeaponComponent::EquipWeapon(UWeaponDataAsset* InWeaponData)
 {
+	UE_LOG(LogTemp, Warning, TEXT("[Weapon] EquipWeapon called, Same=%d"), InWeaponData == CurrentWeaponData);
+
 	if (InWeaponData == CurrentWeaponData)
 	{
 		// 같은 종류의 무기를 먹었다.

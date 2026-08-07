@@ -57,6 +57,9 @@ public:
 	virtual void DamageHealth_Implementation(float InAmount) override;
 	virtual void HealHealth_Implementation(float InAmount) override;
 
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	virtual bool IsAlive() const override;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -89,4 +92,7 @@ private:
 
 	// "거의 0"으로 취급할 오차 허용 범위
 	const float EmptyCheckLimit = 0.01f;
+
+	// 이미 죽음 처리가 되었는지 여부 (OnDie 중복 브로드캐스트 방지)
+	bool bAlive = true;
 };

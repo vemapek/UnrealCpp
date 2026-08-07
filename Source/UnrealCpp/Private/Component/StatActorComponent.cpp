@@ -96,7 +96,11 @@ void UStatActorComponent::DamageHealth_Implementation(float InAmount)
 	{
 		CurrentHealth = 0;
 		OnHealthChange.Broadcast(CurrentHealth, MaxHealth);
-		OnDie.Broadcast();
+		if (bAlive)
+		{
+			OnDie.Broadcast();
+		}
+		bAlive = false;
 	}
 	else
 	{
@@ -108,6 +112,11 @@ void UStatActorComponent::HealHealth_Implementation(float InAmount)
 {
 	CurrentHealth = FMath::Clamp(CurrentHealth + InAmount, 0.0f, MaxHealth);
 	OnHealthChange.Broadcast(CurrentHealth, MaxHealth);
+}
+
+bool UStatActorComponent::IsAlive() const
+{
+	return bAlive;
 }
 
 // Called when the game starts

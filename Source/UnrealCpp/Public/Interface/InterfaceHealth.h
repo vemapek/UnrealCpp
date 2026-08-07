@@ -33,4 +33,7 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Health")
 	void HealHealth(float InAmount);
+
+	// 죽었는지 여부 (0 밑으로 데미지가 여러 번 들어와도 OnDie가 한 번만 브로드캐스트되도록 하는 가드용)
+	virtual bool IsAlive() const = 0;
 };

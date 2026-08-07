@@ -25,6 +25,11 @@ APickupBase::APickupBase()
 	NiagaraComponent->SetupAttachment(SphereCollision);
 }
 
+void APickupBase::InitializePickup(UItemDataAsset* InData)
+{
+	DataAsset = InData;
+}
+
 // Called when the game starts or when spawned
 void APickupBase::BeginPlay()
 {

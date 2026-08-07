@@ -1,9 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/DataAsset.h"
+#include "Data/Item/ItemDataAsset.h"
 #include "Engine/StreamableManager.h"
 #include "WeaponDataAsset.generated.h"
 
@@ -14,13 +13,15 @@ class UNiagaraSystem;
  *
  */
 UCLASS(BlueprintType)
-class UNREALCPP_API UWeaponDataAsset : public UPrimaryDataAsset
+class UNREALCPP_API UWeaponDataAsset : public UItemDataAsset
 {
 	GENERATED_BODY()
 
 public:
-	TSharedPtr<FStreamableHandle> RequestDataLoad(FStreamableDelegate InDelegate) const;
-	bool IsLoaded() const;
+	virtual bool IsLoaded() const override;
+
+protected:
+	virtual void OnAsyncRequest(TArray<FSoftObjectPath>& InOutArray) const override;
 
 public:
 	// 무기의 메시
