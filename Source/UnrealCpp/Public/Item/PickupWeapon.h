@@ -68,5 +68,5 @@ private:
 	FVector PickupStartLocation;
 
 	// 이 픽업을 먹었을 때 획득하는 무기 데이터 (DataAsset을 캐스팅해서 캐싱)
-	TWeakObjectPtr<UWeaponDataAsset> WeaponData = nullptr;
+
 };

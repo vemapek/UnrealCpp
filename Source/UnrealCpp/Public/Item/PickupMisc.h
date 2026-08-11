@@ -25,5 +25,6 @@ protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 private:
+	UPROPERTY(Transient)
 	TWeakObjectPtr<UMiscItemDataAsset> MiscData;
 };

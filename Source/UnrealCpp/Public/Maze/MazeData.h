@@ -35,7 +35,7 @@ private:
 	FCellData* GetRandomNeighborCell(const FCellData& InCell);
 
 	//배열의 순서를 섞는 함수
-	void ShuffleArray(TArray<FCellData*>InOutArray);
+	void ShuffleArray(TArray<FCellData*>& InOutArray);
 
 	//위치를 인덱스로 변경하는 함수
 	inline uint16 LocationToIndex(uint8 InX, uint8 InY)const { return InX + InY * Width; }

@@ -10,24 +10,12 @@ void APickupWeapon::InitializePickup(UItemDataAsset* InData)
 {
 	Super::InitializePickup(InData);
 
-	UE_LOG(LogTemp, Warning, TEXT("[Pickup] InitializePickup: InData=%s, DataAsset(member)=%s"),
-		InData ? *InData->GetName() : TEXT("NULL"),
-		DataAsset ? *DataAsset->GetName() : TEXT("NULL"));
-
-	if (DataAsset)
+	if (UWeaponDataAsset* CastedWeaponData = Cast<UWeaponDataAsset>(DataAsset))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[Pickup] DataAsset Class=%s"), *DataAsset->GetClass()->GetName());
-
-		WeaponData = Cast<UWeaponDataAsset>(DataAsset);
-		UE_LOG(LogTemp, Warning, TEXT("[Pickup] Cast to WeaponDataAsset result Valid=%d"), WeaponData.IsValid());
-
-		if (WeaponData.IsValid())
+		if (UStaticMesh* StaticMeshData = CastedWeaponData->Mesh.LoadSynchronous())
 		{
-			if (UStaticMesh* StaticMeshData = WeaponData->Mesh.LoadSynchronous())
-			{
-				Mesh->SetStaticMesh(StaticMeshData);
-				Mesh->SetRelativeLocation(MeshBaseLocation + WeaponData->SpawnLocationOffset);
-			}
+			Mesh->SetStaticMesh(StaticMeshData);
+			Mesh->SetRelativeLocation(MeshBaseLocation + CastedWeaponData->SpawnLocationOffset);
 		}
 	}
 }
@@ -104,13 +92,12 @@ void APickupWeapon::OnFinishPickupEffect()
 {
 	GetWorldTimerManager().ClearTimer(PickupEffectTimerHandle);
 
-	UE_LOG(LogTemp, Warning, TEXT("[Pickup] TargetActor Valid=%d, WeaponData Valid=%d"),
-		TargetActor.IsValid(), WeaponData.IsValid());
-
-	if (TargetActor.IsValid() && WeaponData.IsValid())
+	if (UWeaponDataAsset* CurrentWeaponData = Cast<UWeaponDataAsset>(DataAsset))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[Pickup] Calling EqueipWeapon on %s"), *TargetActor->GetName());
-		IInterfaceWeaponUser::Execute_EqueipWeapon(TargetActor.Get(), WeaponData.Get());
+		if (TargetActor.IsValid())
+		{
+			IInterfaceWeaponUser::Execute_EqueipWeapon(TargetActor.Get(), CurrentWeaponData);
+		}
 	}
 	Destroy();
 }

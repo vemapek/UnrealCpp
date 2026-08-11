@@ -18,9 +18,11 @@ FMazeData::~FMazeData()
 
 void FMazeData::MakeMaze(uint8 InWidth, uint8 InHeight, int32 InSeed)
 {
+	ClearMaze();					//이전에 만들어진 데이터 삭제하기
+
 	Width = InWidth;
 	Height = InHeight;
-	
+
 	if (InSeed == RandomSeed)
 	{
 		//랜덤하게 시드값 설정
@@ -31,7 +33,6 @@ void FMazeData::MakeMaze(uint8 InWidth, uint8 InHeight, int32 InSeed)
 		//정해진 값으로 시드값 설정
 		RandomStream.Initialize(InSeed);
 	}
-	ClearMaze();					//이전에 만들어진 데이터 삭제하기
 	Cells.SetNum(Width * Height);	//배열 초기화(SetNum으로 실제 배열 요소도 생성)
 
 	WillsonAlgorithmExexute();
@@ -141,13 +142,13 @@ FCellData* FMazeData::GetRandomNeighborCell(const FCellData& InCell)
 	{
 	int32 Index = RandomStream.RandRange(0, DirectionCount - 1);
 	NeightborLoc = InCell.GetLocation() + Direction[Index];
-	} while (IsValidLocation(NeightborLoc.X, NeightborLoc.Y)); //미로 밖을 선택하는 일 방지
+	} while (!IsValidLocation(NeightborLoc.X, NeightborLoc.Y)); //미로 밖을 선택하는 일 방지
 
 
 	return GetCell(static_cast<uint8> (NeightborLoc.X), static_cast<uint8>(NeightborLoc.Y));
 }
 
-void FMazeData::ShuffleArray(TArray<FCellData*> InOutArray)
+void FMazeData::ShuffleArray(TArray<FCellData*>& InOutArray)
 {
 	for (int i = InOutArray.Num()- 1; i > 0; i--)
 	{
