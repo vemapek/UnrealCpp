@@ -122,15 +122,15 @@ void FMazeData::ConnectCells(FCellData* InFrom, FCellData* InTo)
 	}
 	else if (InFrom->Y < InTo->Y)
 
-	{	//From의 남쪽에 To가 있다.
-		InFrom->AddPath(EDirectionType::South);
-		InTo->AddPath(EDirectionType::North);
-	}
-	else //if (InFrom->Y > InTo->Y)
-
 	{	//From의 북쪽에 To가 있다.
 		InFrom->AddPath(EDirectionType::North);
 		InTo->AddPath(EDirectionType::South);
+	}
+	else //if (InFrom->Y > InTo->Y)
+
+	{	//From의 남쪽에 To가 있다.
+		InFrom->AddPath(EDirectionType::South);
+		InTo->AddPath(EDirectionType::North);
 	}
 }
 
