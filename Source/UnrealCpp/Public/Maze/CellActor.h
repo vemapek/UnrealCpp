@@ -19,6 +19,9 @@ public:
 	// CellData 기반으로 경로 설정하고 문 열기
 	void InitializeCell(FCellData* InCellData);
 
+	// 셀 한 칸의 전체 크기(가로/세로)를 가져오는 함수
+	inline float GetCellSize() const { return CellHalfSize * 2.0f; }
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

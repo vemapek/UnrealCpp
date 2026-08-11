@@ -21,6 +21,15 @@ public:
 	//생성된 미로를 제거하는 함수
 	void ClearMaze();
 
+	//생성된 미로의 가로 칸 수를 가져오는 함수
+	inline uint8 GetWidth() const { return Width; }
+
+	//생성된 미로의 세로 칸 수를 가져오는 함수
+	inline uint8 GetHeight() const { return Height; }
+
+	//생성된 미로의 모든 셀 데이터를 가져오는 함수
+	inline TArray<FCellData>& GetCells() { return Cells; }
+
 private:
 	//윌슨 알고리즘 실행 함수
 	void WillsonAlgorithmExexute();
