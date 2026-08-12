@@ -11,16 +11,16 @@ UCLASS()
 class UNREALCPP_API ACellActor : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	ACellActor();
 
-	// CellData 기반으로 경로 설정하고 문 열기
+	// CellData 기반으로 경로 설정하고 문열기
 	void InitializeCell(FCellData* InCellData);
 
-	// 셀 한 칸의 전체 크기(가로/세로)를 가져오는 함수
-	inline float GetCellSize() const { return CellHalfSize * 2.0f; }
+	// 셀 한변의 절반 크기 리턴
+	float GetCellHalfSize() const { return CellHalfSize; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -29,16 +29,15 @@ protected:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Path 설정에 따라 문이 제대로 열리는지 테스트 하기 위한 함수
+	// Path 설정에 따라 문이 제대로 열리는지 테스트하기 위한 함수
 	UFUNCTION(CallInEditor, Category = "Cell")
 	void TestPath();
 
 	// Path 설정에 따라 문을 여는 함수
 	void OpenGate();
 
-
+	// InDirection이 열려있는지 닫혀있는지 확인하는 함수
 	bool IsPath(EDirectionType InDirection);
-
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cell")
@@ -47,10 +46,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Cell")
 	float WallHalfThickness = 50.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Cell", meta = (Bitflags, BitmaskEnum = "/Script/Maze/CellData.EDirectionType"));
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Cell", meta = (Bitmask, BitmaskEnum = "/Script/UnrealCpp.EDirectionType"))
 	int32 Path = 0;
-	// EDirectionType Path = EDirectionType::None;
-
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -61,6 +58,4 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<TObjectPtr<UStaticMeshComponent>> GateMeshes;
-
-
 };
