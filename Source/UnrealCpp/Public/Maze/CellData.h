@@ -16,7 +16,8 @@ enum class EDirectionType : uint8
 ENUM_CLASS_FLAGS(EDirectionType)		// 비트 연산자 오버로딩
 
 /**
- * 미로를 구성하는 셀의 정보를 담을 구조체
+ * 미로를 구성하는 셀의 공통 정보를 담을 기본 구조체
+ * 알고리즘마다 별도로 필요한 데이터는 이 구조체를 상속해서 추가한다
  */
 struct UNREALCPP_API FCellData
 {
@@ -29,11 +30,8 @@ public:
 	// 이 셀에 열려있는 문의 방향
 	EDirectionType Path = EDirectionType::None;
 
-	// 미로 생성 과정에서 이 셀이 미로에 포함되어 있는지 여부
-	bool bInMaze = false;
-
-	// 미로 생성 과정에서 다음셀을 기록하기 위한 변수
-	FCellData* NextCell = nullptr;
+	// TUniquePtr<FCellData>가 파생 타입을 올바르게 소멸시킬 수 있도록 가상 소멸자 사용
+	virtual ~FCellData() = default;
 
 	// 셀의 좌표를 가져오는 함수
 	inline FIntPoint GetLocation() const { return FIntPoint(X, Y); }
@@ -46,4 +44,25 @@ public:
 
 	// 특정 방향이 벽인지 확인하는 함수(벽이면 true)
 	inline bool IsWall(EDirectionType InCheck) const { return !IsPath(InCheck); }
+};
+
+/**
+ * 윌슨 알고리즘(Loop-Erased Random Walk) 진행 중에만 필요한 데이터
+ */
+struct UNREALCPP_API FWilsonCellData : public FCellData
+{
+	// 미로 생성 과정에서 이 셀이 미로에 포함되어 있는지 여부
+	bool bInMaze = false;
+
+	// 미로 생성 과정에서 다음 셀을 기록하기 위한 변수
+	FWilsonCellData* NextCell = nullptr;
+};
+
+/**
+ * 헌트 앤 킬(Hunt-and-Kill) 알고리즘 진행 중에만 필요한 데이터
+ */
+struct UNREALCPP_API FHuntAndKillCellData : public FCellData
+{
+	// 이 셀을 방문했는지 여부
+	bool bVisited = false;
 };

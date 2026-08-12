@@ -97,7 +97,7 @@ void AMazeActor::OnPostMazeGenerate()
 TUniquePtr<FMazeData> AMazeActor::MakeMazeData()
 {
 	TUniquePtr<FMazeData> Maze = MakeUnique<FMazeData>();
-	Maze->MakeMaze(static_cast<uint8>(Width), static_cast<uint8>(Height), RandomSeed);
+	Maze->MakeMaze(static_cast<uint8>(Width), static_cast<uint8>(Height), Algorithm, RandomSeed);
 	return Maze;
 }
 

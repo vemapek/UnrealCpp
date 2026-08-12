@@ -65,6 +65,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Maze")
 	int32 RandomSeed = FMazeData::RandomSeed;
 
+	// 미로 생성에 사용할 알고리즘
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Maze")
+	EMazeAlgorithmType Algorithm = EMazeAlgorithmType::Wilson;
+
 	// 인스턴싱(HISM)으로 미로를 그릴지, 셀마다 액터를 스폰할지 선택
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Maze|Performance")
 	bool bUseHISM = true;
