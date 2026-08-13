@@ -7,6 +7,7 @@
 #include "Item/ItemDropTable.h"
 #include "Item/PickupBase.h"
 #include "Data/Item/ItemDataAsset.h"
+#include "Framework/PickupFactorySubsystem.h"
 
 AEnemyCharacter::AEnemyCharacter()
 {
@@ -46,32 +47,21 @@ void AEnemyCharacter::OnItemDrop()
 			// 드랍 확률 체크
 			if (FMath::FRand() > Row->DropRate) continue;
 
-			UItemDataAsset* PickupData = Row->PickupData;
-			if (!PickupData->IsLoaded())
+			if (UPickupFactorySubsystem* PickupFactory = GetGameInstance()->GetSubsystem<UPickupFactorySubsystem>())
 			{
-				PickupData->RequestDataLoad(
-					FStreamableDelegate::CreateWeakLambda(
+				PickupFactory->SpawnPickupAsync(Row->PickupData, GetActorTransform(),
+					FOnPickupSpawned::CreateWeakLambda(
 						this,
-						[this, PickupData]()
+						[](APickupBase* InSpawned)
 						{
-							SpawnPickup(PickupData);
-						}));
-			}
-			else
-			{
-				SpawnPickup(PickupData);
+							if (InSpawned)
+							{
+								UE_LOG(LogTemp, Log, TEXT("%s가 드랍되었습니다."), *InSpawned->GetName());
+							}
+						}
+					)
+				);
 			}
 		}
-	}
-}
-
-void AEnemyCharacter::SpawnPickup(UItemDataAsset* ItemDataAsset)
-{
-	if (APickupBase* PickupActor = GetWorld()->SpawnActor<APickupBase>(
-		ItemDataAsset->PickupClass.Get(), GetActorTransform()))
-	{
-		PickupActor->InitializePickup(ItemDataAsset);
-		UE_LOG(LogTemp, Log, TEXT("%s가 드랍되었습니다."),
-			*(ItemDataAsset->DisplayName).ToString());
 	}
 }

@@ -34,6 +34,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Base|Data")
 	int32 Price = 1;
 
+	// 아이템이 인벤토리 한 칸에 쌓일 수 있는 최대 개수
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Base|Data")
+	int32 MaxStackCount = 1;
+
 	// 스폰할 클래스
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base|Spawn")
 	TSoftClassPtr<APickupBase> PickupClass;
