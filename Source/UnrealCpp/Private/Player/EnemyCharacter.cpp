@@ -4,6 +4,7 @@
 #include "Component/StatActorComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "UnrealCpp/UnrealCpp.h"
+#include "Interface/InterfaceHealth.h"
 #include "Item/ItemDropTable.h"
 #include "Item/PickupBase.h"
 #include "Data/Item/ItemDataAsset.h"
@@ -11,17 +12,36 @@
 
 AEnemyCharacter::AEnemyCharacter()
 {
+	PrimaryActorTick.bCanEverTick = false;
+
+	StatComp = CreateDefaultSubobject<UStatActorComponent>(TEXT("StatComp"));
+
 	GetCapsuleComponent()->SetCollisionObjectType(ECC_Enemy);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+UStatActorComponent* AEnemyCharacter::GetStatComponent() const
+{
+	return StatComp;
 }
 
 void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (UStatActorComponent* StatComp = GetStatComponent())
+	if (IsValid(StatComp))
 	{
 		StatComp->OnDie.AddDynamic(this, &AEnemyCharacter::OnDie);
 	}
+}
+
+float AEnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	float Damage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	IInterfaceHealth::Execute_DamageHealth(StatComp, Damage);
+
+	return Damage;
 }
 
 void AEnemyCharacter::OnDie()
@@ -47,7 +67,7 @@ void AEnemyCharacter::OnItemDrop()
 			// 드랍 확률 체크
 			if (FMath::FRand() > Row->DropRate) continue;
 
-			if (UPickupFactorySubsystem* PickupFactory = GetGameInstance()->GetSubsystem<UPickupFactorySubsystem>())
+			if (UPickupFactorySubsystem* PickupFactory = GetWorld()->GetSubsystem<UPickupFactorySubsystem>())
 			{
 				PickupFactory->SpawnPickupAsync(Row->PickupData, GetActorTransform(),
 					FOnPickupSpawned::CreateWeakLambda(
@@ -63,5 +83,16 @@ void AEnemyCharacter::OnItemDrop()
 				);
 			}
 		}
+	}
+}
+
+void AEnemyCharacter::SpawnPickup(UItemDataAsset* ItemDataAsset)
+{
+	if (APickupBase* PickupActor = GetWorld()->SpawnActor<APickupBase>(
+		ItemDataAsset->PickupClass.Get(), GetActorTransform()))
+	{
+		PickupActor->InitializePickup(ItemDataAsset);
+		UE_LOG(LogTemp, Log, TEXT("%s가 드랍되었습니다."),
+			*(ItemDataAsset->DisplayName).ToString());
 	}
 }

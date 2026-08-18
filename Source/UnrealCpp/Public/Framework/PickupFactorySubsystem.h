@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Subsystems/GameInstanceSubsystem.h"
+#include "Subsystems/WorldSubsystem.h"
 #include "Engine/StreamableManager.h"
 #include "PickupFactorySubsystem.generated.h"
 
@@ -17,7 +17,7 @@ DECLARE_DELEGATE_OneParam(FOnPickupSpawned, APickupBase*);
  *
  */
 UCLASS()
-class UNREALCPP_API UPickupFactorySubsystem : public UGameInstanceSubsystem
+class UNREALCPP_API UPickupFactorySubsystem : public UWorldSubsystem
 {
 	GENERATED_BODY()
 
@@ -35,6 +35,8 @@ public:
 		FOnPickupSpawnedDynamic OnSpawned);
 
 	// USubSystem 함수 오버라이드 ------------------------------------------------------------
+	// 서브시스템을 만들지 여부를 결정하는 함수
+	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 	// 서브시스템이 생성되었을 때 실행될 함수
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	// 서브시스템이 삭제될 때 실행될 함수

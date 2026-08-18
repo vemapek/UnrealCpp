@@ -6,7 +6,8 @@
 
 void UStatBarWidget::UpdateStat(float InCurrent, float InMax)
 {
-	Bar->SetPercent(InCurrent / InMax);
+	float Div = FMath::Max(InMax, 0.001f);	// 0으로 나누는 것 방지
+	Bar->SetPercent(InCurrent / Div);
 	CurrentText->SetText(FText::AsNumber(FMath::FloorToInt(InCurrent)));
 	MaxText->SetText(FText::AsNumber(FMath::FloorToInt(InMax)));
 }

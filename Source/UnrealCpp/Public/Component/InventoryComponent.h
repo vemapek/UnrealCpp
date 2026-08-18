@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Component/InventoryCommandTypes.h"
 #include "Data/Item/ItemDataAsset.h"
 #include "InventoryComponent.generated.h"
 
@@ -66,11 +67,17 @@ public:
 	// Sets default values for this component's properties
 	UInventoryComponent();
 
+	// 커맨드 실행용 함수
+	UFUNCTION(BlueprintCallable, Category = "Inventory|Command")
+	bool ExecuteCommand(const FInventoryCommand& Command, FInventoryCommandResult& OutResult);
+
 	// 인벤토리에 돈을 추가하거나 감소시키는 함수
+	UFUNCTION(BlueprintCallable)
 	void AddMoney(int32 InIncome);
 
 	// 인벤토리에 아이템을 추가하는 함수
-	void AddItem(UItemDataAsset* InItemData, int32 InCount);
+	UFUNCTION(BlueprintCallable)
+	int32 AddItem(UItemDataAsset* InItemData, int32 InCount);
 
 	// 인벤토리의 특정 슬롯에 들어있는 아이템 사용하는 함수
 	void UseItem(int32 InIndex);
@@ -98,8 +105,16 @@ protected:
 
 	// 인덱스가 적절한 범위인지 확인하는 함수
 	inline bool IsValidIndex(int32 InSlotIndex) const {
-		return (InSlotIndex < InventorySize) && (InSlotIndex > 0);
+		return (InSlotIndex < InventorySize) && (InSlotIndex >= 0);
 	};
+
+	// 커맨드 핸들링 함수들 ----------------------------------------------------------------------------------------
+	bool HandleAddCommand(UItemDataAsset* InItemData, int32 InCount, FInventoryCommandResult& OutResult);
+	bool HandleMoveCommand(int32 InSourceIndex, int32 InTargetIndex, FInventoryCommandResult& OutResult);
+	bool HandleDropCommand(int32 InSlotIndex, const FVector& InDropLocation, FInventoryCommandResult& OutResult);
+	bool HandleUseCommand(int32 InSlotIndex, FInventoryCommandResult& OutResult);
+	bool HandleMoneyCommand(int32 InMoneyDiff, FInventoryCommandResult& OutResult);
+	// ------------------------------------------------------------------------------------------------------------
 
 	// 사용안함. Called when the game starts
 	virtual void BeginPlay() override;
@@ -108,7 +123,7 @@ protected:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
-	// 같은 종류의 아이템이 있는 슬롯을 찾는 함수
+	// 같은 종류의 아이템이 있는 슬롯을 찾는 함수(남은 스택이 있어야함)
 	int32 FindSlotWithItem(const UItemDataAsset* InItemData, int32 InStartIndex = 0);
 
 	// 비어있는 슬롯을 찾는 함수

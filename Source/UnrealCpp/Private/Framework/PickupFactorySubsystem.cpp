@@ -4,6 +4,13 @@
 #include "Data/Item/ItemDataAsset.h"
 #include "Item/PickupBase.h"
 
+bool UPickupFactorySubsystem::ShouldCreateSubsystem(UObject* Outer) const
+{
+	if (!Super::ShouldCreateSubsystem(Outer)) return false;
+
+	return true;
+}
+
 void UPickupFactorySubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -12,7 +19,7 @@ void UPickupFactorySubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 void UPickupFactorySubsystem::Deinitialize()
 {
-	// 진행중인 비동기 로딩 핸들 정리(게임 인스턴스가 종료될 경우에는 콜백을 호출하지 않음)
+	// 진행중인 비동기 로딩 핸들 정리(월드가 종료될 경우에는 콜백을 호출하지 않음)
 	for (TSharedPtr<FStreamableHandle>& Handle : ActiveStreamableHandles)
 	{
 		if (Handle.IsValid() && Handle->IsActive())
