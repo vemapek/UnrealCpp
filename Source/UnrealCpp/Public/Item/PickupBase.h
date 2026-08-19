@@ -38,6 +38,10 @@ protected:
 	// 오버랩 됐을 때 대상에게 실제 작업을 처리하는 함수(줍는 연출 시작)
 	virtual void OnPickup(AActor* InTarget);
 
+	// 스폰 직후 유예 시간이 끝나면 호출됨. 픽업 가능 상태로 전환하고,
+	// 그 사이에 계속 겹쳐있던 대상이 있으면 그 대상에 대해 픽업을 한 번 재시도한다.
+	void ActivatePickupReadiness();
+
 	// 줍는 연출(플레이어 쪽으로 날아가는 연출) 진행 함수
 	virtual void OnUpdatePickupEffect();
 
@@ -55,6 +59,13 @@ protected:
 	// 픽업 시 획득할 데이터 애셋
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base Data")
 	TObjectPtr<UItemDataAsset> DataAsset;
+
+	// 스폰된 직후 이 시간(초) 동안은 오버랩이 발생해도 픽업을 무시한다.
+	// (인벤토리가 꽉 차서 대상 바로 옆에 다시 스폰되는 경우처럼, 스폰과 동시에
+	// 겹쳐 있는 상태에서 오버랩 콜백이 즉시(같은 콜스택 안에서) 재귀 호출되어
+	// 스택 오버플로우가 나는 것을 막기 위함)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base Data")
+	float SpawnGraceTime = 0.3f;
 
 	// 메시의 기본 위치
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Base Data")
@@ -116,6 +127,17 @@ protected:
 private:
 	float ElapsedTime = 0.0f;
 	bool bIdle = true;
+
+	// 스폰 직후 유예 시간이 끝났는지 여부(끝나기 전에는 오버랩을 무시함)
+	bool bReadyForPickup = false;
+
+	// 스폰 유예 타이머 핸들
+	FTimerHandle SpawnGraceTimerHandle;
+
+	// OnPickup이 이미 한 번 처리됐는지 여부(한 프레임에 같은 대상과 컴포넌트 여러 개가
+	// 겹쳐서 NotifyActorBeginOverlap이 중복으로 들어오는 경우 등, 어떤 경로로든
+	// OnPickup이 이 인스턴스에 대해 두 번 이상 처리되는 것을 막기 위한 1회용 잠금)
+	bool bIsPickupHandled = false;
 
 	// 아이템을 줍는 연출이 진행된 시간
 	float PickupElapsedTime = 0.0f;

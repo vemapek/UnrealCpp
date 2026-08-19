@@ -39,6 +39,17 @@ void APickupBase::BeginPlay()
 {
 	Super::BeginPlay();
 	ElapsedTime = 0.0f;
+
+	// 스폰 직후 유예 시간 동안은 오버랩을 무시한다(스폰과 동시에 겹친 대상으로
+	// 인한 즉시 재귀 호출/스택 오버플로우 방지). 유예 시간이 끝나면
+	// ActivatePickupReadiness에서 픽업을 정상적으로 받아준다.
+	GetWorldTimerManager().SetTimer(
+		SpawnGraceTimerHandle,
+		this,
+		&APickupBase::ActivatePickupReadiness,
+		SpawnGraceTime,
+		false
+	);
 }
 
 // Called every frame
@@ -55,12 +66,41 @@ void APickupBase::Tick(float DeltaTime)
 void APickupBase::NotifyActorBeginOverlap(AActor* OtherActor)
 {
 	Super::NotifyActorBeginOverlap(OtherActor);
+
+	if (!bReadyForPickup) return; // 스폰 유예 시간 중이면 무시
+	if (OtherActor && OtherActor->IsA<APickupBase>()) return; // 픽업끼리는 서로 주울 수 없음(안 그러면 근처에 재스폰될 때마다 서로 겹쳐서 계속 분열함)
+
 	OnPickup(OtherActor);
+}
+
+void APickupBase::ActivatePickupReadiness()
+{
+	bReadyForPickup = true;
+
+	// 유예 시간 동안 계속 겹쳐있던 대상이 있었다면(예: 인벤토리가 꽉 차서
+	// 대상 바로 옆에 재스폰된 경우) 그 대상에 대해 픽업을 한 번 재시도한다.
+	// (여기서 실패해도 다음에 스폰되는 대체 픽업은 각자 새로운 유예 시간을
+	// 가지므로 무한 재귀로 이어지지 않는다)
+	TArray<AActor*> OverlappingActors;
+	GetOverlappingActors(OverlappingActors);
+	for (AActor* OverlappingActor : OverlappingActors)
+	{
+		if (OverlappingActor && !OverlappingActor->IsA<APickupBase>()) // 픽업끼리는 제외
+		{
+			OnPickup(OverlappingActor);
+			break;
+		}
+	}
 }
 
 void APickupBase::OnPickup(AActor* InTarget)
 {
-	if (GetWorldTimerManager().IsTimerActive(PickupEffectTimerHandle)) return; // 타이머가 이미 작동 중이면 종료(중복실행 방지)
+	// 같은 프레임에 여러 컴포넌트가 동시에 겹치는 등의 이유로 NotifyActorBeginOverlap이
+	// 중복으로 들어올 수 있어서, 타이머 상태가 아니라 1회용 잠금으로 확실히 막는다.
+	// (커브 애셋이 없어서 OnFinishPickupEffect가 타이머 없이 즉시 실행되는 경우엔
+	// 타이머 상태만으로는 중복 실행을 막을 수 없었음)
+	if (bIsPickupHandled) return;
+	bIsPickupHandled = true;
 
 	UE_LOG(LogTemp, Log, TEXT("%s가 %s를 획득했습니다."), *InTarget->GetName(), *this->GetName());
 	bIdle = false;
