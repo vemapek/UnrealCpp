@@ -15,12 +15,13 @@ TSharedPtr<FStreamableHandle> UItemDataAsset::RequestDataLoad(FStreamableDelegat
 
 bool UItemDataAsset::IsLoaded() const
 {
-	return PickupClass.IsValid();
+	return PickupClass.IsValid() && (Icon.IsNull() || Icon.IsValid());	// Icon은 선택사항
 }
 
 void UItemDataAsset::OnAsyncRequest(TArray<FSoftObjectPath>& InOutArray) const
 {
 	InOutArray.Add(PickupClass.ToSoftObjectPath());
+	InOutArray.Add(Icon.ToSoftObjectPath());
 
 	// 상속받은 클래스에서 추가 요소들 추가 등록
 }

@@ -8,6 +8,8 @@
 #include "Data/Item/ItemDataAsset.h"
 #include "InventoryComponent.generated.h"
 
+DECLARE_DELEGATE_OneParam(FOnInventorySlotChanged, int32);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryMoneyChanged, int32);
 
 USTRUCT(BlueprintType)
 struct FInvenSlot
@@ -91,6 +93,9 @@ public:
 
 	// 임시 슬롯을 리턴하는 함수
 	FInvenSlot* GetTempSlot(int InSlotIndex);
+
+	// 인벤토리 크기를 리턴하는 함수
+	int32 GetSize() const { return InventorySize; }
 	// --------------------------------------------------------------------
 
 protected:
@@ -128,6 +133,13 @@ private:
 
 	// 비어있는 슬롯을 찾는 함수
 	int32 FindEmptySlot();
+
+public:
+	// 슬롯에 변화가 생겼을 때 발동할 델리게이트(싱글캐스트)
+	FOnInventorySlotChanged OnSlotChanged;
+
+	// 돈에 변화가 생겼을 때 발동할 델리게이트(멀티캐스트)
+	FOnInventoryMoneyChanged OnMoneyChanged;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory|Money")

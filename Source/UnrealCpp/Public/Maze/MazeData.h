@@ -21,7 +21,7 @@ enum class EMazeAlgorithmType : uint8
 class UNREALCPP_API FMazeData
 {
 public:
-	FMazeData() = default;
+	FMazeData();
 
 	// Cells가 TUniquePtr를 담고 있어 복사가 불가능하므로 명시적으로 복사를 막는다
 	// (UNREALCPP_API로 내보내지는 클래스는 암시적 복사 생성자/대입 연산자가 즉시 생성되려고 시도하기 때문에,

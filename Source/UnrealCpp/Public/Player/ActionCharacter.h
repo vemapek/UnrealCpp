@@ -7,6 +7,7 @@
 #include "InputActionValue.h"
 #include "Interface/InterfaceStat.h"
 #include "Interface/InterfaceWeaponUser.h"
+#include "Interface/InterfaceInventoryUser.h"
 #include "ActionCharacter.generated.h"
 
 class UInputAction;
@@ -17,7 +18,7 @@ class UWeaponComponent;
 class UWeaponDataAsset;
 
 UCLASS()
-class UNREALCPP_API AActionCharacter : public ACharacter, public IInterfaceStat, public IInterfaceWeaponUser
+class UNREALCPP_API AActionCharacter : public ACharacter, public IInterfaceStat, public IInterfaceWeaponUser, public IInterfaceInventoryUser
 {
 	GENERATED_BODY()
 
@@ -33,6 +34,14 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual UWeaponComponent* GetWeaponComponent() const override;
+
+	// InventoryComponent로 전달할 함수들 -------------------------------------------------------------
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	virtual UInventoryComponent* GetInventoryComponent() const override;
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	virtual bool ExecuteInventoryCommand(const FInventoryCommand& Command, FInventoryCommandResult& OutResult) override;
+	// -----------------------------------------------------------------------------------------------
 
 protected:
 	// Called when the game starts or when spawned
@@ -119,6 +128,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UWeaponComponent> WeaponComponent = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UInventoryComponent> InvenComponent = nullptr;
 
 private:
 	UPROPERTY()

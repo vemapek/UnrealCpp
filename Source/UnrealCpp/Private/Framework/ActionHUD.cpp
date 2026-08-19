@@ -1,9 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Framework/ActionHUD.h"
-#include "Blueprint/UserWidget.h"
+#include "Widget/MainHudWidget.h"
 
-UUserWidget* AActionHUD::GetMainHudWidget() const
+UMainHudWidget* AActionHUD::GetMainHudWidget() const
 {
 	return MainHudWidgetInstance;
 }
@@ -14,7 +14,7 @@ void AActionHUD::BeginPlay()
 
 	if (MainHudWidgetClass)
 	{
-		MainHudWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), MainHudWidgetClass);
+		MainHudWidgetInstance = CreateWidget<UMainHudWidget>(GetWorld(), MainHudWidgetClass);
 		if (MainHudWidgetInstance)
 		{
 			MainHudWidgetInstance->AddToViewport();

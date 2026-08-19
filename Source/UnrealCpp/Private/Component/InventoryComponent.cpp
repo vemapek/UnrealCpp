@@ -44,6 +44,7 @@ bool UInventoryComponent::ExecuteCommand(const FInventoryCommand& Command, FInve
 void UInventoryComponent::AddMoney(int32 InIncome)
 {
 	Money += InIncome;
+	OnMoneyChanged.Broadcast(Money);	// 돈의 변경을 알림
 }
 
 int32 UInventoryComponent::AddItem(UItemDataAsset* InItemData, int32 InCount)
@@ -129,6 +130,23 @@ void UInventoryComponent::SetSlot(int32 InSlotIndex, UItemDataAsset* InItemData,
 	FInvenSlot& Slot = Slots[InSlotIndex];
 	Slot.ItemData = InItemData;
 	Slot.SetCount(InCount);
+
+	// InItemData가 null일 수 있음(슬롯을 비우는 경우) - null이면 로딩 요청하지 않음
+	if (InItemData && !InItemData->IsLoaded())
+	{
+		InItemData->RequestDataLoad(
+			FStreamableDelegate::CreateWeakLambda(
+				this,
+				[this, InSlotIndex]()
+				{
+					// 리프레시용으로 변경 브로드캐스트 날리기
+					OnSlotChanged.ExecuteIfBound(InSlotIndex);
+				})
+		);
+	}
+
+	// 델리게이트 전담 함수(다른 인벤토리 슬롯 변경 함수들은 최종적으로 이 함수를 호출)
+	OnSlotChanged.ExecuteIfBound(InSlotIndex);
 }
 
 void UInventoryComponent::ClearSlot(int32 InSlotIndex)
