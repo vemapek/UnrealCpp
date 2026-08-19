@@ -12,3 +12,14 @@ void UMainHudWidget::TestInventoryRefresh() const
 	}
 #endif
 }
+
+void UMainHudWidget::ToggleInventory() const
+{
+	UE_LOG(LogTemp, Warning, TEXT("[Toggle] 6. MainHudWidget::ToggleInventory 실행됨. Inventory = %s"),
+		Inventory ? TEXT("Valid") : TEXT("nullptr(BindWidget 이름 확인 필요)"));
+
+	if (Inventory)
+	{
+		Inventory->ToggleInventoryWidget();
+	}
+}

@@ -5,10 +5,13 @@
 #include "Component/WeaponComponent.h"
 #include "Component/InventoryComponent.h"
 #include "Data/Item/WeaponDataAsset.h"
+#include "Framework/ActionHUD.h"
+#include "Widget/MainHudWidget.h"
 
 #include "EnhancedInputComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -136,6 +139,7 @@ void AActionCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AActionCharacter::OnMoveAction);
 		EnhancedInputComponent->BindAction(IA_Attack, ETriggerEvent::Started, this, &AActionCharacter::OnAttackAction);
 		EnhancedInputComponent->BindAction(IA_DropWeapon, ETriggerEvent::Started, this, &AActionCharacter::OnDropWeaponAction);
+		EnhancedInputComponent->BindAction(IA_ToggleInventory, ETriggerEvent::Started, this, &AActionCharacter::OnToggleInventoryAction);
 		EnhancedInputComponent->BindActionValueLambda(IA_Boost, ETriggerEvent::Started,
 			[this](const FInputActionValue& _) {
 				OnBoostOn(_);
@@ -224,4 +228,37 @@ void AActionCharacter::OnDropWeaponAction(const FInputActionValue& Value)
 			WeaponComp->EquipWeapon(WeaponComp->GetDefaultWeaponData());
 		}
 	}
+}
+
+void AActionCharacter::OnToggleInventoryAction(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[Toggle] 1. 입력 액션 실행됨"));
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Toggle] 2. PlayerController 캐스팅 실패(GetController()가 PlayerController가 아님)"));
+		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("[Toggle] 2. PlayerController = %s"), *PC->GetName());
+
+	AActionHUD* HUD = Cast<AActionHUD>(PC->GetHUD());
+	if (!HUD)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Toggle] 3. AActionHUD 캐스팅 실패. 현재 HUD = %s"),
+			PC->GetHUD() ? *PC->GetHUD()->GetClass()->GetName() : TEXT("nullptr"));
+		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("[Toggle] 3. HUD = %s"), *HUD->GetName());
+
+	UMainHudWidget* MainHud = HUD->GetMainHudWidget();
+	if (!MainHud)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Toggle] 4. MainHudWidgetInstance가 null입니다(MainHudWidgetClass 확인 필요)"));
+		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("[Toggle] 4. MainHudWidget = %s"), *MainHud->GetName());
+
+	MainHud->ToggleInventory();
+	UE_LOG(LogTemp, Warning, TEXT("[Toggle] 5. ToggleInventory 호출 완료"));
 }

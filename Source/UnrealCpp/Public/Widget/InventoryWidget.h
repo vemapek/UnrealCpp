@@ -26,10 +26,15 @@ public:
 	// 인벤토리 초기화용(인벤토리 위젯과 인벤토리 컴포넌트 사이의 연결을 제거)
 	void ClearInventoryWidget();
 
-	// 인벤토리 열기
+	// 인벤토리 열기(보이기 + 마우스 커서/입력 모드 전환)
 	void OpenInventoryWidget();
-	// 인벤토리 닫기
+	// 인벤토리 닫기(숨기기 + 마우스 커서/입력 모드 복구)
 	void CloseInventoryWidget();
+	// 열려있으면 닫고, 닫혀있으면 여는 함수
+	void ToggleInventoryWidget();
+
+	// 인벤토리가 열려있는지 여부
+	bool IsInventoryOpen() const;
 
 #if WITH_EDITOR
 	void TestRefresh();
@@ -72,5 +77,8 @@ private:
 
 	// 슬롯의 개수(위젯의 슬롯 개수와 컴포넌트의 슬롯 개수 중 작은 수)
 	int32 SlotSize = 0;
+
+	// 인벤토리가 열려있는지 여부
+	bool bIsOpen = false;
 
 };

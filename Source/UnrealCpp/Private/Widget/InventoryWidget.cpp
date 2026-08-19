@@ -7,6 +7,7 @@
 #include "Components/UniformGridPanel.h"
 #include "Component/InventoryComponent.h"
 #include "Interface/InterfaceInventoryUser.h"
+#include "GameFramework/PlayerController.h"
 
 
 void UInventoryWidget::InitializeInventoryWidget(UInventoryComponent* InInven)
@@ -55,10 +56,53 @@ void UInventoryWidget::ClearInventoryWidget()
 
 void UInventoryWidget::OpenInventoryWidget()
 {
+	SetVisibility(ESlateVisibility::Visible);
+	bIsOpen = true;
+
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		FInputModeGameAndUI InputMode;
+		InputMode.SetWidgetToFocus(TakeWidget());
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		PC->SetInputMode(InputMode);
+		PC->SetShowMouseCursor(true);
+	}
 }
 
 void UInventoryWidget::CloseInventoryWidget()
 {
+	SetVisibility(ESlateVisibility::Collapsed);
+	bIsOpen = false;
+
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		FInputModeGameOnly InputMode;
+		PC->SetInputMode(InputMode);
+		PC->SetShowMouseCursor(false);
+	}
+}
+
+void UInventoryWidget::ToggleInventoryWidget()
+{
+	UE_LOG(LogTemp, Warning, TEXT("[Toggle] 7. InventoryWidget::ToggleInventoryWidget 실행됨. 현재 bIsOpen = %s"),
+		bIsOpen ? TEXT("true") : TEXT("false"));
+
+	if (bIsOpen)
+	{
+		CloseInventoryWidget();
+	}
+	else
+	{
+		OpenInventoryWidget();
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[Toggle] 8. 토글 후 bIsOpen = %s, Visibility = %d"),
+		bIsOpen ? TEXT("true") : TEXT("false"), (int32)GetVisibility());
+}
+
+bool UInventoryWidget::IsInventoryOpen() const
+{
+	return bIsOpen;
 }
 
 void UInventoryWidget::TestRefresh()
@@ -100,6 +144,11 @@ void UInventoryWidget::RefreshMoneyPanel(int32 InCurrentMoney) const
 void UInventoryWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	// HUD에 항상 붙어있는 위젯이라, 시작할 때는 닫혀있는 상태로 시작
+	SetVisibility(ESlateVisibility::Collapsed);
+	bIsOpen = false;
+
 	if (CloseButton)
 	{
 		CloseButton->OnClicked.AddDynamic(this, &UInventoryWidget::OnClickedCloseButton);

@@ -63,6 +63,8 @@ protected:
 	void OnBoostOff(const FInputActionValue& Value);
 	void OnAttackAction(const FInputActionValue& Value);
 	void OnDropWeaponAction(const FInputActionValue& Value);
+	// 인벤토리 여닫기 토글 입력 처리 함수(HUD의 MainHudWidget을 찾아 토글을 위임)
+	void OnToggleInventoryAction(const FInputActionValue& Value);
 
 private:
 	void SpendBoostStamina(float DeltaTime);
@@ -82,6 +84,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UInputAction> IA_Boost;
+
+	// 인벤토리 여닫기 입력 액션(에디터에서 E키로 매핑)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UInputAction> IA_ToggleInventory;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Action Anims")
 	TObjectPtr<UAnimMontage> RollMontage;

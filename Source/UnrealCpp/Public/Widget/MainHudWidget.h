@@ -21,6 +21,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void TestInventoryRefresh() const;
 
+	// 인벤토리 위젯을 열려있으면 닫고, 닫혀있으면 여는 함수(E키 등 입력에서 호출)
+	UFUNCTION(BlueprintCallable)
+	void ToggleInventory() const;
+
 protected:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UPlayerHUDWidget> PlayerHUD;
