@@ -24,6 +24,10 @@ public:
 	// 픽업이 어떤 아이템 데이터를 나타내는지 셋업하는 공통 진입점 (하위 클래스에서 확장)
 	virtual void InitializePickup(UItemDataAsset* InData);
 
+	// 시작 위치에서 목표 위치까지 포물선을 그리며 날아가는 연출(버리기/재스폰 등에서 사용).
+	// 연출이 끝나기 전까지는 픽업할 수 없다.
+	void PlayThrowEffect(const FVector& InStartLocation, const FVector& InEndLocation);
+
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
@@ -49,7 +53,15 @@ protected:
 	// 장착(무기)/인벤토리 추가(잡화) 등 각자의 처리를 구현한다. 기본 구현은 그냥 사라짐.
 	virtual void OnFinishPickupEffect();
 
+	// 대상의 인벤토리에 DataAsset 추가를 시도한다(무기/잡화 픽업이 공용으로 사용).
+	// 성공하면 픽업을 삭제하고, 실패하면(인벤토리가 없거나 꽉 찬 경우) 대상 앞쪽으로
+	// 포물선을 그리며 다시 던지고 픽업을 삭제한다.
+	void TryAddToInventoryOrThrowBack();
+
 	virtual void OnUpdateUpdownSpin(float InDeltaTime);
+
+	// 던지기 연출 진행 함수
+	void OnUpdateThrowEffect();
 
 private:
 	bool IsCurveAssetReady() const;
@@ -108,6 +120,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect|Pickup")
 	float PickupEffecHeight = 50.0f;
 
+protected:
+	// 던지기 연출(포물선)의 전체 진행 시간
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect|Throw")
+	float ThrowDuration = 0.5f;
+
+	// 던지기 연출 중 포물선의 최고 높이
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Effect|Throw")
+	float ThrowArcHeight = 150.0f;
+
 	// 아이템을 줍는 대상(하위 클래스의 OnFinishPickupEffect에서 사용)
 	TWeakObjectPtr<AActor> TargetActor = nullptr;
 
@@ -147,4 +168,14 @@ private:
 
 	// 아이템을 줍는 연출용 시작 위치
 	FVector PickupStartLocation;
+
+	// 던지기 연출용 타이머 핸들
+	FTimerHandle ThrowEffectTimerHandle;
+
+	// 던지기 연출이 진행된 시간
+	float ThrowElapsedTime = 0.0f;
+
+	// 던지기 연출용 시작/목표 위치
+	FVector ThrowStartLocation;
+	FVector ThrowEndLocation;
 };

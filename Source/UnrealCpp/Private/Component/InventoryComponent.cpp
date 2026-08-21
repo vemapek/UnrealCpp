@@ -2,6 +2,10 @@
 
 #include "Component/InventoryComponent.h"
 #include "Framework/PickupFactorySubsystem.h"
+#include "Data/Item/UseableItemDataAsset.h"
+#include "Data/Item/WeaponDataAsset.h"
+#include "Interface/InterfaceWeaponUser.h"
+#include "Item/PickupBase.h"
 
 // Sets default values for this component's properties
 UInventoryComponent::UInventoryComponent()
@@ -98,6 +102,27 @@ int32 UInventoryComponent::AddItem(UItemDataAsset* InItemData, int32 InCount)
 
 void UInventoryComponent::UseItem(int32 InIndex)
 {
+	FInvenSlot* Slot = GetSlot(InIndex);
+	if (!Slot || Slot->IsEmpty()) return;
+
+	// 무기는 사용(우클릭) 시 장착만 하고, 소모품이 아니므로 개수는 그대로 둔다
+	if (UWeaponDataAsset* WeaponData = Cast<UWeaponDataAsset>(Slot->ItemData))
+	{
+		if (Cast<IInterfaceWeaponUser>(GetOwner()))
+		{
+			IInterfaceWeaponUser::Execute_EqueipWeapon(GetOwner(), WeaponData);
+		}
+		return;
+	}
+
+	if (const UUseableItemDataAsset* Useable = Cast<const UUseableItemDataAsset>(Slot->ItemData))
+	{
+		if (Useable->ItemAction)
+		{
+			Useable->ItemAction->ExecuteAction(GetOwner(), GetOwner());
+			UpdateSlotCount(InIndex, -1);
+		}
+	}
 }
 
 FInvenSlot* UInventoryComponent::GetSlot(int InSlotIndex)
@@ -261,20 +286,40 @@ bool UInventoryComponent::HandleDropCommand(int32 InSlotIndex, const FVector& In
 	}
 
 	UWorld* World = GetWorld();
+	AActor* OwnerActor = GetOwner();
 	UItemDataAsset* ItemData = Slot.ItemData;
-	if (World && ItemData)
+	if (World && ItemData && OwnerActor)
 	{
 		if (UPickupFactorySubsystem* Factory = World->GetSubsystem<UPickupFactorySubsystem>())
 		{
+			constexpr float ThrowDistance = 200.0f; // 플레이어 앞쪽으로 던져질 거리
+
+			const FVector StartLocation = OwnerActor->GetActorLocation();
+			const FVector ForwardVector = OwnerActor->GetActorForwardVector();
+			const FVector ForwardTarget = StartLocation + ForwardVector * ThrowDistance;
+
 			for (int32 i = 0; i < Slot.GetCount(); i++)
 			{
-				FVector SpawnLocation(FMath::RandPointInCircle(100.0f), 0);
-				SpawnLocation += InDropLocation;
+				// 여러 개를 한 번에 버릴 때 서로 겹치지 않게 착지 지점에 약간의 랜덤을 준다
+				FVector RandomOffset(FMath::RandPointInCircle(50.0f), 0.0f);
+				FVector EndLocation = ForwardTarget + RandomOffset;
 
-				FTransform SpawnTransform(FRotator::ZeroRotator, SpawnLocation);
-				Factory->SpawnPickupAsync(ItemData, SpawnTransform, FOnPickupSpawned());
+				FTransform SpawnTransform(StartLocation);
+				Factory->SpawnPickupAsync(ItemData, SpawnTransform,
+					FOnPickupSpawned::CreateWeakLambda(
+						this,
+						[StartLocation, EndLocation](APickupBase* InSpawned)
+						{
+							if (InSpawned)
+							{
+								InSpawned->PlayThrowEffect(StartLocation, EndLocation);
+							}
+						}
+					)
+				);
 			}
-			Slot.Clear();
+			// Slot.Clear()는 구조체만 비울 뿐 OnSlotChanged를 안 날려서 UI가 갱신 안 됐음
+			ClearSlot(InSlotIndex);
 			OutResult.bSuccess = true;
 		}
 	}

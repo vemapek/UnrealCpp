@@ -8,6 +8,8 @@
 #include "Data/Item/ItemDataAsset.h"
 #include "InventoryComponent.generated.h"
 
+class UTemporarySlotWidget;
+
 DECLARE_DELEGATE_OneParam(FOnInventorySlotChanged, int32);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryMoneyChanged, int32);
 
@@ -96,6 +98,9 @@ public:
 
 	// 인벤토리 크기를 리턴하는 함수
 	int32 GetSize() const { return InventorySize; }
+
+	// 드래그 중 표시할 임시 슬롯(드래그 비주얼) 위젯 클래스를 리턴하는 함수
+	TSubclassOf<UTemporarySlotWidget> GetTemporarySlotWidgetClass() const { return TemporarySlotWidgetClass; }
 	// --------------------------------------------------------------------
 
 protected:
@@ -147,6 +152,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory|Slot")
 	TArray<FInvenSlot> Slots;	// 크기는 InventorySize + 1(임시 슬롯)
+
+	// 드래그 중 표시할 임시 슬롯(드래그 비주얼) 위젯 클래스
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory|Slot")
+	TSubclassOf<UTemporarySlotWidget> TemporarySlotWidgetClass;
 
 private:
 	// 인벤토리의 크기

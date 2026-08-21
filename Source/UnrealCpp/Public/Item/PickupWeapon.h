@@ -9,8 +9,8 @@
 class UWeaponDataAsset;
 
 /**
- * 무기 픽업. 줍는 연출(날아오는 연출)이 끝나면 인벤토리를 거치지 않고
- * 대상에게 바로 장착(EqueipWeapon)시킨다.
+ * 무기 픽업. 줍는 연출(날아오는 연출)이 끝나면 다른 아이템처럼 인벤토리에 추가된다.
+ * 장착은 인벤토리에서 우클릭(사용)했을 때 이루어진다.
  */
 UCLASS()
 class UNREALCPP_API APickupWeapon : public APickupBase

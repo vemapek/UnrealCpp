@@ -4,6 +4,9 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "NiagaraComponent.h"
+#include "Interface/InterfaceInventoryUser.h"
+#include "Component/InventoryCommandTypes.h"
+#include "Framework/PickupFactorySubsystem.h"
 
 // Sets default values
 APickupBase::APickupBase()
@@ -26,6 +29,27 @@ APickupBase::APickupBase()
 void APickupBase::InitializePickup(UItemDataAsset* InData)
 {
 	DataAsset = InData;
+}
+
+void APickupBase::PlayThrowEffect(const FVector& InStartLocation, const FVector& InEndLocation)
+{
+	// 날아가는 동안은 못 줍게 막고, 기본 스폰 유예 타이머와 겹치지 않도록 정리
+	bReadyForPickup = false;
+	GetWorldTimerManager().ClearTimer(SpawnGraceTimerHandle);
+
+	ThrowStartLocation = InStartLocation;
+	ThrowEndLocation = InEndLocation;
+	ThrowElapsedTime = 0.0f;
+
+	SetActorLocation(ThrowStartLocation);
+
+	GetWorldTimerManager().SetTimer(
+		ThrowEffectTimerHandle,
+		this,
+		&APickupBase::OnUpdateThrowEffect,
+		TimerInterval,
+		true
+	);
 }
 
 void APickupBase::OnConstruction(const FTransform& Transform)
@@ -164,6 +188,51 @@ void APickupBase::OnFinishPickupEffect()
 	Destroy();
 }
 
+void APickupBase::TryAddToInventoryOrThrowBack()
+{
+	if (IInterfaceInventoryUser* InvenUser = TargetActor.IsValid() ? Cast<IInterfaceInventoryUser>(TargetActor.Get()) : nullptr)
+	{
+		FInventoryCommand Command = FInventoryCommand::MakeAdd(DataAsset, 1);
+		FInventoryCommandResult Result;
+		if (InvenUser->ExecuteInventoryCommand(Command, Result))
+		{
+			// 인벤토리에 잘 들어갔으면 픽업 삭제
+			Destroy();
+			return;
+		}
+	}
+
+	// 대상이 인벤토리를 안 갖고 있거나, 인벤토리가 꽉 차서 추가에 실패했으면
+	// 이 픽업은 삭제하는 대신 대상(플레이어) 앞쪽으로 포물선을 그리며 다시 던져진다.
+	if (UWorld* World = GetWorld())
+	{
+		if (UPickupFactorySubsystem* Factory = World->GetSubsystem<UPickupFactorySubsystem>())
+		{
+			constexpr float ThrowBackDistance = 200.0f; // 플레이어 앞쪽으로 던져질 거리
+
+			AActor* Thrower = TargetActor.Get();
+			const FVector StartLocation = Thrower ? Thrower->GetActorLocation() : GetActorLocation();
+			const FVector ForwardVector = Thrower ? Thrower->GetActorForwardVector() : GetActorForwardVector();
+			const FVector EndLocation = StartLocation + ForwardVector * ThrowBackDistance;
+
+			FTransform SpawnTransform(StartLocation);
+
+			Factory->SpawnPickupAsync(DataAsset, SpawnTransform,
+				FOnPickupSpawned::CreateWeakLambda(
+					this,
+					[StartLocation, EndLocation](APickupBase* InSpawned)
+					{
+						if (InSpawned)
+						{
+							InSpawned->PlayThrowEffect(StartLocation, EndLocation);
+						}
+					}
+				));
+		}
+	}
+	Destroy();
+}
+
 void APickupBase::OnUpdateUpdownSpin(float InDeltaTime)
 {
 	if (!IsCurveAssetReady()) return;
@@ -178,6 +247,23 @@ void APickupBase::OnUpdateUpdownSpin(float InDeltaTime)
 
 	float NewAngle = SpinCurve->GetFloatValue(Progress) * 360.0f;
 	Mesh->SetRelativeRotation(FRotator(0.0f, NewAngle, 0.0f));
+}
+
+void APickupBase::OnUpdateThrowEffect()
+{
+	ThrowElapsedTime += TimerInterval;
+	float Progress = FMath::Clamp(ThrowElapsedTime / FMath::Max(ThrowDuration, 0.001f), 0.0f, 1.0f);
+
+	FVector NewLocation = FMath::Lerp(ThrowStartLocation, ThrowEndLocation, Progress);
+	NewLocation.Z += FMath::Sin(Progress * PI) * ThrowArcHeight; // 포물선
+
+	SetActorLocation(NewLocation);
+
+	if (Progress >= 1.0f)
+	{
+		GetWorldTimerManager().ClearTimer(ThrowEffectTimerHandle);
+		ActivatePickupReadiness(); // 착지 직후 바로 주울 수 있게(계속 겹쳐있었으면 즉시 재시도까지 포함)
+	}
 }
 
 bool APickupBase::IsCurveAssetReady() const

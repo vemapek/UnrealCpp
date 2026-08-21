@@ -12,6 +12,10 @@ class UHorizontalBox;
 class UInventoryComponent;
 struct FInvenSlot;
 
+// 슬롯에 마우스가 들어오고 나갈 때 알려주는 델리게이트(상세 정보창 표시용)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnSlotEnter, int32);
+DECLARE_MULTICAST_DELEGATE(FOnSlotLeave);
+
 /**
  *
  */
@@ -24,9 +28,17 @@ public:
 	void InitializeSlot(UInventoryComponent* InInven, int32 InIndex);
 	void RefreshSlot() const;
 
+public:
+	FOnSlotEnter OnSlotEnter;
+	FOnSlotLeave OnSlotLeave;
+
 protected:
 	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
+	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	virtual void NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 
 protected:
 	// 아이콘 이미지
@@ -55,8 +67,4 @@ private:
 
 	// 인벤토리의 슬롯 인덱스
 	int32 Index = InvalidIndex;
-
-	// 인벤토리의 슬롯
-	const FInvenSlot* Slot = nullptr;	// 구조체는 TWeakObjectPtr로 저장안됨
-
 };

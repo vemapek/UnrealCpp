@@ -11,6 +11,7 @@ class UMoneyPanelWidget;
 class UUniformGridPanel;
 class UInventoryComponent;
 class UInventorySlotWidget;
+class UDetailInfoWidget;
 
 /**
  *
@@ -49,6 +50,7 @@ protected:
 	void RefreshMoneyPanel(int32 InCurrentMoney) const;
 
 	virtual void NativeConstruct() override;
+	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 
 private:
 	// CloseButton이 눌려졌을 때 실행될 함수
@@ -67,6 +69,10 @@ protected:
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, meta = (BindWidget))
 	TObjectPtr<UUniformGridPanel> SlotGridPanel;
+
+	// 슬롯에 마우스를 올렸을 때 아이템 상세 정보를 보여주는 위젯
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, meta = (BindWidget))
+	TObjectPtr<UDetailInfoWidget> DetailInfo;
 
 private:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
